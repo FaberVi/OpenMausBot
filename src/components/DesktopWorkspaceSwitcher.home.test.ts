@@ -33,8 +33,15 @@ it("in a window whose home is My Cloud, names My Cloud with nothing to open: no 
 it("anywhere else keeps the switcher as it was", async () => {
   await show({ local: false, name: "My Cloud", origin: "https://omb-u-1a2b3c4d5e6f.fly.dev" }, { cloudHome: true });
   expect(host.querySelector("button")?.getAttribute("aria-haspopup")).toBe("menu");
-  await show({ local: true, name: "This computer" });
+  await show({ local: true, name: "This computer", defaultLocal: true });
   expect(host.querySelector("button")?.textContent).toContain("This computer");
+});
+
+it("shows Questo computer on the default local workspace when Italian is selected", async () => {
+  setLocale("it");
+  await show({ local: true, name: "This computer", defaultLocal: true });
+  expect(host.querySelector("button")?.textContent).toContain("Questo computer");
+  expect(host.textContent).not.toContain("This computer");
 });
 
 it("says always on only when My Cloud's verified plan never sleeps, on its pages and its pair page alike", async () => {

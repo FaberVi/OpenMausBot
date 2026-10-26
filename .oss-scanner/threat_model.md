@@ -24,7 +24,7 @@ The same TypeScript **harness server** (`server/`) runs in four places:
   (email sign-in, members, `openmausbot fleet`). Members and roles live in
   `enterprise/`, and the hook point is `server/enterprise.ts`.
 - **MausBot Cloud home.** Each customer gets one Fly app with one machine
-  (the `cloud-home` stage of the root `Dockerfile`, plus `deploy/fly/`). Caddy
+  (the `cloud-home` stage of `deploy/Dockerfile`, plus `deploy/fly/`). Caddy
   terminates TLS, and the server stays on loopback. See `docs/cloud-pro.md`.
 
 Bots have tools:

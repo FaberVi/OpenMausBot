@@ -1,7 +1,10 @@
 # Local Docker Compose
 
-From the repository root, run `docker compose up -d --build`, then open
+From the repository root, run `docker compose up -d --build` (or
+`docker compose -f deploy/local/compose.yaml up -d --build`), then open
 http://localhost:8080. Docker with Linux containers is required.
+Compose definition: [`compose.yaml`](compose.yaml) in this folder; the root
+[`compose.yaml`](../../compose.yaml) file only includes it for convenience.
 Compose supplies defaults; no `.env` file is required.
 The application container uses Docker's init process to reap orphaned agent
 subprocesses.
@@ -34,8 +37,9 @@ docker compose exec omb codex login --device-auth
 docker compose exec omb node dist-server/openmausbot.js pair
 ```
 
-On Windows, `./maus.ps1` forwards arguments to Compose using the repository
-directory. It respects Docker's selected context and `DOCKER_CONTEXT`.
+On Windows, `./maus.ps1` at the repository root (or `deploy/local/docker-compose.ps1`)
+forwards arguments to Compose using the repository directory. It respects Docker's
+selected context and `DOCKER_CONTEXT`.
 
 Data and engine credentials persist in the named data volume. For an existing
 volume, set `OMB_DATA_VOLUME` to its name and `OMB_DATA_EXTERNAL=true`.

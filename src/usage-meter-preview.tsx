@@ -1,4 +1,4 @@
-// Dev-only gallery of the usage meter, served at /usage-meter-preview.html; not in the packaged app.
+// Dev-only gallery of the usage meter, served at /preview/usage-meter-preview.html; not in the packaged app.
 // ?view=sidebar|settings|confirm&state=near|full|browser|top|trial&skin=midnight|daylight&lang=de
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";

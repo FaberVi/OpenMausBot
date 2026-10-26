@@ -2,13 +2,17 @@
   "extends": "./tsconfig.server.json",
   "compilerOptions": {
     "noEmit": false,
-    "outDir": "dist-companion",
-    "rootDir": "companion/src",
+    "outDir": "../dist-server",
     "rewriteRelativeImportExtensions": true,
     "declaration": false,
     "sourceMap": false
   },
+  "exclude": [
+    "../server/**/*.test.ts",
+    "../server/testing",
+    "../server/drivers/pi-mcp-extension.ts"
+  ],
   "include": [
-    "companion/src"
+    "../server"
   ]
 }

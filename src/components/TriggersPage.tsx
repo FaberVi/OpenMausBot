@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Plus, Zap } from "lucide-react";
 
-import { useDesktopCapabilities } from "@/components/DesktopCapabilities";
+import { useCaptionChrome, useDesktopCapabilities } from "@/components/DesktopCapabilities";
 import { automationsFrom, automationSentence, automationStatus, orderAutomations, statusLine, type Automation } from "@/lib/automations";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
@@ -61,19 +61,26 @@ export function TriggersPage({ onBack, onOpenRoom }: { onBack: () => void; onOpe
   }, [open, dispatch]);
 
   const macInset = capabilities.windowChrome === "mac-inset";
-  const windowDragStyle = macInset ? ({ WebkitAppRegion: "drag" } as CSSProperties) : undefined;
-  const windowNoDragStyle = macInset ? ({ WebkitAppRegion: "no-drag" } as CSSProperties) : undefined;
+  const { dragProps, padClass, noDragStyle, controlsShiftStyle, windowsCaption } = useCaptionChrome();
   const editRoutine = editing?.kind === "schedule" ? state.routines.find((routine) => routine.id === editing.id) : undefined;
   const editWebhook = editing?.kind === "webhook" ? state.webhooks.find((webhook) => webhook.id === editing.id) : undefined;
   const editApp = editing?.kind === "app" ? appTriggers.triggers.find((trigger) => trigger.id === editing.id) : undefined;
 
   return (
     <main className="flex h-full min-w-0 flex-1 flex-col bg-app animate-workspace-in">
-      <header className={cn("shrink-0 border-b border-hairline/35 bg-app py-3 pr-4", macInset && view === "calendar" ? "pl-[86px]" : view === "list" ? "pl-12 md:pl-4" : "pl-4")} style={windowDragStyle}>
+      <header
+        {...dragProps}
+        className={cn(
+          "shrink-0 border-b border-hairline/35 bg-app py-3",
+          windowsCaption ? "pr-[132px]" : "pr-4",
+          macInset && view === "calendar" ? "pl-[86px]" : view === "list" ? "pl-12 md:pl-4" : "pl-4",
+          padClass,
+        )}
+      >
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" ref={backButtonRef} onClick={onBack} aria-label="Back" title="Back" className="flex size-9 shrink-0 items-center justify-center rounded-lg text-ink-secondary hover:bg-raised hover:text-ink" style={windowNoDragStyle}><ArrowLeft size={18} /></button>
+          <button type="button" ref={backButtonRef} onClick={onBack} aria-label="Back" title="Back" className="flex size-9 shrink-0 items-center justify-center rounded-lg text-ink-secondary hover:bg-raised hover:text-ink" style={noDragStyle}><ArrowLeft size={18} /></button>
           <h1 data-tour="automations-page" className="mr-1 text-[18px] font-semibold tracking-tight text-ink">{t("automations.title")}</h1>
-          <div className="ml-auto flex items-center gap-3" style={windowNoDragStyle}>
+          <div className="ml-auto flex items-center gap-3" style={{ ...noDragStyle, ...controlsShiftStyle }}>
             {showFilter && view === "list" && (
               <Select size="sm" aria-label={t("automations.allBots")} value={botFilter} onChange={(event) => setBotFilter(event.target.value)} className="max-w-[180px]">
                 <option value="all">{t("automations.allBots")}</option>

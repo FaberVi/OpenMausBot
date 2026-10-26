@@ -20,7 +20,7 @@ person connects their own AI ([Trial Claude credit](#trial-claude-credit)).
 
 This page is the OpenMausBot half of a contract with three parties:
 
-- **the home machine**: this repository's `cloud-home` image (`Dockerfile`, `deploy/fly/`);
+- **the home machine**: this repository's `cloud-home` image (`deploy/Dockerfile`, `deploy/fly/`);
 - **the Admin** (openmaus-cloud, `docs/consumer-cloud.md` there): provisions
   the app, holds the machine's signing secret, and answers the desktop's Cloud
   session;
@@ -1071,7 +1071,7 @@ layers (Node, Chrome's libraries, agent-browser and its Chrome) and adds:
   any file under `/app`, or Caddy, is not root's or is writable by others.
 
 ```sh
-docker build --target cloud-home -t omb-cloud-home .
+docker build -f deploy/Dockerfile --target cloud-home -t omb-cloud-home .
 ```
 
 The app files are the last layers, so an image built from a later commit

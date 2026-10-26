@@ -54,7 +54,7 @@ afterEach(() => {
 describe("the installer", () => {
   it("copies the node_modules directory itself: electron-builder drops a root-level node_modules from any tree it copies", () => {
     // A Windows checkout may carry CRLF; the capture must not end in \r.
-    const yml = fs.readFileSync(new URL("../electron-builder.yml", import.meta.url), "utf8").replace(/\r\n/g, "\n");
+    const yml = fs.readFileSync(new URL("../config/electron-builder.yml", import.meta.url), "utf8").replace(/\r\n/g, "\n");
     const entries = [...yml.matchAll(/from: (dist-native\/duckdb\/[^\n]+)\n\s+to: ([^\n]+)/g)].map((m) => [m[1], m[2]]);
     expect(entries.length).toBeGreaterThanOrEqual(3);
     for (const [from, to] of entries) {

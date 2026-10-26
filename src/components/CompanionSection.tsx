@@ -191,7 +191,7 @@ export function CompanionSection({ profileEmail = "", focusRequest = 0 }: { prof
     <div className="flex flex-col gap-4">
       {remoteBlocked && <p role="status" className="text-[13px] leading-relaxed text-ink-secondary">{remoteBlocked}</p>}
       <div ref={pairingFlow} tabIndex={-1} data-phone-pairing="computer" className="scroll-mt-4 rounded-xl ring-1 ring-accent/40 focus:outline-none">
-        <Card title={pairingCopy.title} subtitle={pairingCopy.subtitle}>
+        <Card collapsible defaultOpen title={pairingCopy.title} subtitle={pairingCopy.subtitle}>
           {(panelStatus || (pairedCount > 0 && c.hostedReady)) && (
             <div className="mb-4 flex items-center justify-between gap-3">
               {panelStatus && (

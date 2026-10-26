@@ -11,9 +11,9 @@
 # Caddy in the same network namespace to terminate TLS and authentication at
 # the edge.
 #
-#   docker build -t openmausbot .
-#   docker build --build-arg ENGINES="@anthropic-ai/claude-code @openai/codex" -t openmausbot .
-#   docker build --target cloud-home -t omb-cloud-home .
+#   docker build -f deploy/Dockerfile -t openmausbot .
+#   docker build -f deploy/Dockerfile --build-arg ENGINES="@anthropic-ai/claude-code @openai/codex" -t openmausbot .
+#   docker build -f deploy/Dockerfile --target cloud-home -t omb-cloud-home .
 #
 # HOME is the /data volume, so engine CLI logins (~/.claude, ~/.codex, ~/.grok,
 # ...) and OpenMausBot's own state (~/.openmausbot) persist across container

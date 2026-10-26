@@ -75,8 +75,13 @@ test("a checkout from the page carries only a plan and a source, as text; the se
   await f.bridge.workspaces.menu({ from: "howto", origin: "https://evil.example.test" });
   await f.bridge.workspaces.menu({ from: "elsewhere" });
   await f.bridge.workspaces.menu();
-  assert.deepEqual(f.invoked, [["cloud-account:checkout", "pro", "app_card"], ["cloud-account:checkout", "max", "undefined"],
-    ["workspaces:menu", "howto"], ["workspaces:menu"], ["workspaces:menu"]]);
+  assert.deepEqual(JSON.parse(JSON.stringify(f.invoked)), [["cloud-account:checkout", "pro", "app_card"], ["cloud-account:checkout", "max", "undefined"],
+    ["workspaces:menu", { from: "howto" }], ["workspaces:menu"], ["workspaces:menu"]]);
+  const labeled = preload();
+  await labeled.bridge.workspaces.menu({
+    labels: { local: "Questo computer", addCloud: "x", connect: "y", forget: "z", evil: "drop" },
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(labeled.invoked.at(-1))), ["workspaces:menu", { labels: { local: "Questo computer", addCloud: "x", connect: "y", forget: "z" } }]);
 });
 test("main opens a checkout only for a plan the offer sells now and one of this app's sources, where Cloud is offered", async () => {
   const { CHECKOUT_SOURCES } = await import("./cloud-account.mjs");

@@ -2819,15 +2819,18 @@ const homeAlone = () => Boolean(homeWindow.cloudOrigin()) && !otherPlaces(enviro
 ipcMain.handle("workspaces:state", workspaceOnly(event => ({ ...workspaceSummary(environmentsState), ...(homeAlone() && homeWindow.homePage(event) ? { home: true } : {}) })));
 ipcMain.handle("workspaces:line", workspaceOnly(() => homePlaces.line()));
 let workspaceMenuOpen = false;
-ipcMain.handle("workspaces:menu", workspaceOnly(async (_event, from) => {
+ipcMain.handle("workspaces:menu", workspaceOnly(async (_event, options) => {
   if (workspaceMenuOpen || homeAlone()) return;
   workspaceMenuOpen = true;
+  const from = options === "howto" ? "howto" : options?.from;
+  const labels = options && typeof options === "object" ? options.labels : undefined;
   try {
     await cloudOffersReady();
     const menu = Menu.buildFromTemplate(workspaceMenuTemplate(environmentsState, {
       onSwitch: (id) => void workspaceMenuAction(() => switchEnvironment(id)),
       onConnect: () => void workspaceMenuAction(openWorkspaceSettings),
       onForget: (id) => void workspaceMenuAction(() => forgetEnvironment(id)),
+      ...(labels ? { labels } : {}),
       ...cloudMenuOptions(from === "howto" ? "app_howto" : "app_menu"),
       ...(await placesMenuOptions({ homeOrigin: homeWindow.cloudOrigin(), cloud: cloudHomeEntry(), home: oneHome.away(), platform: process.platform, port: SERVER_PORT })),
     }));

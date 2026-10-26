@@ -98,6 +98,8 @@ export function RemoteComputerSection() {
 
   return (
     <Card
+      collapsible
+      defaultOpen
       title={state.active ? t("remote.client.active") : t("remote.client.idle")}
       subtitle={t("remote.client.subtitle")}
     >

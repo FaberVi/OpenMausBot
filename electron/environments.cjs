@@ -65,10 +65,16 @@ function parseHostedWorkspaceLink(input) {
   }
 }
 
+function workspaceMenuForgetLabel(template, name) {
+  if (typeof template === "string" && template.includes("{name}")) return template.replaceAll("{name}", () => name);
+  return `Forget “${name}”…`;
+}
+
 /** Remote renderers learn only their current workspace, never the local list. */
-function workspaceSummary(state) {
+function workspaceSummary(state, labels = null) {
   const active = activeEnvironment(state);
-  if (!active) return { local: true, name: "This computer" };
+  const localLabel = typeof labels?.local === "string" ? labels.local : "This computer";
+  if (!active) return { local: true, name: localLabel, defaultLocal: true };
   if (active.kind === "local") return { local: true, name: active.name, localPath: active.dataDir, missing: active.missing === true };
   return { local: false, name: active.name, origin: active.origin, ...(cleanColor(active.color) ? { color: active.color } : {}),
     ...(active.team ? { role: teamRoleLabel(active.team.role) } : {}) };
@@ -107,12 +113,17 @@ function workspaceSenderAllowed(event, contents, state, localOrigin) {
 /** Native menu choices, never renderer-supplied destinations or callbacks. `iconFor`: a saved colour's small dot, when main can draw one.
  * `places`: the one line saying which side has which bots, shown first; `copyToCloud`: the send line under the list. `foldSublabels`: where menus show no sublabels (Windows, Linux), My Cloud's status line
  * joins its name instead of vanishing. */
-function workspaceMenuTemplate(state, { onSwitch, onConnect, onForget, onAddCloud, sublabels = {}, iconFor = null, places = null, copyToCloud = null, foldSublabels = false, homeOrigin = null }) {
+function workspaceMenuTemplate(state, { onSwitch, onConnect, onForget, onAddCloud, sublabels = {}, iconFor = null, places = null, copyToCloud = null, foldSublabels = false, homeOrigin = null, labels = null }) {
   const active = activeEnvironment(state);
-  if (homeOrigin) return homeMenuTemplate(state, { onSwitch, onForget, sublabels, iconFor, foldSublabels, homeOrigin });
+  const localLabel = typeof labels?.local === "string" ? labels.local : "This computer";
+  const addCloudLabel = typeof labels?.addCloud === "string" ? labels.addCloud : "Add a Cloud…";
+  const addCloudSublabel = typeof labels?.addCloudSublabel === "string" ? labels.addCloudSublabel : "Keeps your bots running 24/7";
+  const connectLabel = typeof labels?.connect === "string" ? labels.connect : "Connect to a server…";
+  const forgetTemplate = typeof labels?.forget === "string" ? labels.forget : null;
+  if (homeOrigin) return homeMenuTemplate(state, { onSwitch, onForget, sublabels, iconFor, foldSublabels, homeOrigin, forgetTemplate });
   return [
     ...(places ? [{ id: "workspace-places", label: places, enabled: false }, { type: "separator" }] : []),
-    { id: "workspace-local", label: "This computer", type: "radio", checked: !active, click: () => onSwitch(LOCAL_ID) },
+    { id: "workspace-local", label: localLabel, type: "radio", checked: !active, click: () => onSwitch(LOCAL_ID) },
     ...[...state.environments].sort((a, b) => Boolean(b.team) - Boolean(a.team)).map((entry) => {
       const icon = iconFor && cleanColor(entry.color) ? iconFor(entry.color) : null;
       const status = Object.hasOwn(sublabels, entry.id) ? sublabels[entry.id] : entry.team ? teamRoleLabel(entry.team.role) : null;
@@ -123,17 +134,17 @@ function workspaceMenuTemplate(state, { onSwitch, onConnect, onForget, onAddClou
       };
     }),
     ...(copyToCloud ? [{ id: "workspace-copy-to-cloud", label: copyToCloud.label, click: copyToCloud.click }] : []),
-    ...(onAddCloud ? [{ id: "workspace-add-cloud", label: "Add a Cloud…", sublabel: "Keeps your bots running 24/7", click: onAddCloud }] : []),
+    ...(onAddCloud ? [{ id: "workspace-add-cloud", label: addCloudLabel, sublabel: addCloudSublabel, click: onAddCloud }] : []),
     { type: "separator" },
-    { id: "workspace-connect", label: "Connect to a server…", click: onConnect },
-    ...(active && !active.team ? [{ id: "workspace-forget", label: `Forget “${active.name}”…`, click: () => onForget(active.id) }] : []),
+    { id: "workspace-connect", label: connectLabel, click: onConnect },
+    ...(active && !active.team ? [{ id: "workspace-forget", label: workspaceMenuForgetLabel(forgetTemplate, active.name), click: () => onForget(active.id) }] : []),
   ];
 }
 
 /** Once My Cloud is the person's home: My Cloud, each team's Cloud (with this person's role), then the other saved
  * servers, each a whole place of its own; this computer is not one of them, and nothing here sends or copies. A team is
  * the Admin's to list and remove, so it has no Forget. */
-function homeMenuTemplate(state, { onSwitch, onForget, sublabels, iconFor, foldSublabels, homeOrigin }) {
+function homeMenuTemplate(state, { onSwitch, onForget, sublabels, iconFor, foldSublabels, homeOrigin, forgetTemplate = null }) {
   const active = activeEnvironment(state);
   const places = state.environments.filter((entry) => entry.kind !== "local").sort((a, b) => placeRank(a, homeOrigin) - placeRank(b, homeOrigin));
   return [
@@ -145,7 +156,7 @@ function homeMenuTemplate(state, { onSwitch, onForget, sublabels, iconFor, foldS
         ...(icon ? { icon } : {}), type: "radio", checked: entry.id === state.activeId, click: () => onSwitch(entry.id),
       };
     }),
-    ...(active && active.origin !== homeOrigin && !active.team ? [{ type: "separator" }, { id: "workspace-forget", label: `Forget “${active.name}”…`, click: () => onForget(active.id) }] : []),
+    ...(active && active.origin !== homeOrigin && !active.team ? [{ type: "separator" }, { id: "workspace-forget", label: workspaceMenuForgetLabel(forgetTemplate, active.name), click: () => onForget(active.id) }] : []),
   ];
 }
 

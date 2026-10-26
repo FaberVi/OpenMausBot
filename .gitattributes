@@ -7,6 +7,8 @@ shared/mascot-bodies.ts text eol=lf
 # git runs hooks through sh; a CRLF shebang line is "/bin/sh^M: bad interpreter" on every platform.
 scripts/git-hooks/* text eol=lf
 deploy/podman/*.sh text eol=lf
+build/linux-after-install.sh text eol=lf
+build/linux-after-remove.sh text eol=lf
 # Vendor patch hashes and original notices must survive Windows checkout
 # byte-for-byte. Do not let core.autocrlf rewrite these reviewed inputs.
 third_party/browser/** text eol=lf
@@ -27,7 +29,15 @@ third_party/opencode/LICENSE text eol=lf
 # the next. A CRLF checkout on Windows ends those lines in "\r", so nothing
 # joins and every layering, healthcheck and trust check fails for a reason
 # that has nothing to do with the image. Docker itself reads LF everywhere.
-Dockerfile text eol=lf
+deploy/Dockerfile text eol=lf
+deploy/local/Dockerfile text eol=lf
+# Compose files are parsed in CI and in scripts/docker-image.test.ts; keep LF.
+compose.yaml text eol=lf
+deploy/local/compose.yaml text eol=lf
+deploy/docker-compose.yml text eol=lf
+deploy/podman/compose.yaml text eol=lf
+# scripts/prepare-duckdb.test.mjs normalises electron-builder.yml to LF before asserting.
+config/electron-builder.yml text eol=lf
 # shared/app-frame/host-page.test.ts compares the committed app host page with
 # what scripts/build-app-host.ts writes (LF), and checks the sha256 on its first
 # line against the body after it; the phone apps copy it byte for byte. A CRLF

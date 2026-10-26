@@ -1,4 +1,4 @@
-// Dev-only gallery of the Cloud buying sheet, served at /cloud-buy-preview.html; not in the packaged app.
+// Dev-only gallery of the Cloud buying sheet, served at /preview/cloud-buy-preview.html; not in the packaged app.
 // ?state=choose|sign-in-email|sign-in-code|sign-in-sso|pay|pay-late|setup|ready|has-cloud|team-setup|team-ready|unreachable&skin=midnight&staging=1&reduced=1&plan=starter&lang=de
 // &current=pro (a subscriber's own plan says Your plan; current=personal shows a Personal subscriber's own card)
 import { StrictMode } from "react";

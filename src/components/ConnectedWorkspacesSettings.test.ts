@@ -61,6 +61,15 @@ const textButton = (label: string) => render().nodes.filter(n => n.type === "but
 const forms = () => render().nodes.filter(n => n.type === "form");
 const envFormFields = () => nodes(forms()[0]!.props.children).filter(n => n.type === "input");
 
+it("renders in Italian when that locale is active", async () => {
+  setLocale("it");
+  await stubEnvironments(); await mount();
+  const { html } = render();
+  expect(html).toContain("Ambienti su questo computer");
+  expect(html).toContain("I tuoi server");
+  expect(html).toContain("Collegati a un server");
+});
+
 it("lists local environments with their folders above the servers, marking a missing one", async () => {
   await stubEnvironments(); await mount();
   const { html } = render();
@@ -69,7 +78,7 @@ it("lists local environments with their folders above the servers, marking a mis
   expect(html.indexOf("Environments on this computer")).toBeLessThan(html.indexOf("Your servers"));
   expect(html).toContain("/home/me/.openmausbot-work");
   expect(html.match(/>missing</g)).toHaveLength(1);
-  expect(html).toContain("https://bots.example.test");
+  expect(html).not.toContain("https://bots.example.test");
 });
 
 it("hides local environments and the create form in a dev build", async () => {

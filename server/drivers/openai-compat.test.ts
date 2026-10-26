@@ -266,6 +266,57 @@ describe("OpenAICompatDriver", () => {
     await inst.dispose();
   });
 
+  it("lists LM Studio chat keys from the native catalog and skips the OpenAI variant id", async () => {
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/models")) {
+        return Response.json({
+          models: [
+            { type: "llm", key: "google/gemma-4-26b-a4b" },
+            { type: "embedding", key: "acme/vector-model" },
+            { type: "decision", key: "acme/router" },
+          ],
+        });
+      }
+      if (url.endsWith("/v1/models")) return Response.json({ data: [{ id: "google/gemma-4-26b-a4b@q4_k_m" }] });
+      return new Response("no", { status: 500 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const inst = await OpenAICompatDriver.create({
+      instanceId: "lm-studio",
+      displayName: "LM Studio",
+      enabled: true,
+      config: { url: "http://127.0.0.1:1234/v1", key: "lm-studio", apiKeyEnv: "OPENAI_COMPAT_API_KEY" },
+      environment: {},
+    });
+    await inst.refreshModels?.();
+    expect(inst.models.options.map((option) => option.id)).toEqual(["google/gemma-4-26b-a4b"]);
+    expect(fetchMock.mock.calls.some((call) => {
+      const url = String(call[0]);
+      return url.endsWith("/v1/models") && !url.includes("/api/v1/");
+    })).toBe(false);
+    await inst.dispose();
+  });
+
+  it("uses the OpenAI model list when the LM Studio catalog is not JSON", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/models")) return new Response("not-json", { status: 200, headers: { "content-type": "text/plain" } });
+      if (url.endsWith("/v1/models")) return Response.json({ data: [{ id: "local-chat" }] });
+      return new Response("no", { status: 500 });
+    }));
+    const inst = await OpenAICompatDriver.create({
+      instanceId: "lm-studio",
+      displayName: "LM Studio",
+      enabled: true,
+      config: { url: "http://127.0.0.1:1234/v1", key: "lm-studio", apiKeyEnv: "OPENAI_COMPAT_API_KEY" },
+      environment: {},
+    });
+    await inst.refreshModels?.();
+    expect(inst.models.options.map((option) => option.id)).toEqual(["local-chat"]);
+    await inst.dispose();
+  });
+
   it("includes streamed token totals and bounds the cancellable stream", async () => {
     const anySignal = vi.spyOn(AbortSignal, "any");
     vi.stubGlobal(

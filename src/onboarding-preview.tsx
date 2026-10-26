@@ -1,4 +1,4 @@
-// Dev-only gallery of the welcome flow's beats, served at /onboarding-preview.html; not in the packaged app.
+// Dev-only gallery of the welcome flow's beats, served at /preview/onboarding-preview.html; not in the packaged app.
 import { StrictMode, useEffect, useState } from "react";
 import type { CloudOffer } from "../electron/cloud-home.mjs";
 import { createRoot } from "react-dom/client";

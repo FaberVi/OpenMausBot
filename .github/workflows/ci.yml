@@ -629,7 +629,7 @@ jobs:
         # even when the host leg failed: they test different Chromes.
         if: ${{ !cancelled() && runner.os == 'Linux' }}
         run: |
-          docker build --target runtime -t omb-runtime:s4 .
+          docker build -f deploy/Dockerfile --target runtime -t omb-runtime:s4 .
           mkdir -p node_modules/.vite && chmod a+w . node_modules/.vite
           docker run --rm --init --shm-size=512m --user maus -e CI=true \
             -e OMB_CDP_CHROME=/opt/openmausbot-browser/chrome -e OMB_CDP_HOST=container -e OMB_BROWSER_SANDBOX=0 \

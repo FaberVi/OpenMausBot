@@ -29,7 +29,7 @@ export function ThreadConcurrencySettings() {
     }
   };
   return (
-    <Card title={t("settings.threads.title")} subtitle={t("settings.threads.subtitle")}>
+    <Card collapsible defaultOpen={false} title={t("settings.threads.title")} subtitle={t("settings.threads.subtitle")}>
       <label htmlFor="thread-concurrency" className="block text-[13px] font-medium text-ink">{t("settings.threads.label")}</label>
       <Select className="mt-2" id="thread-concurrency" value={pending ?? confirmed} disabled={pending !== null}
         aria-describedby="thread-concurrency-help"

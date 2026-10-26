@@ -99,7 +99,22 @@ const bridge = {
   // Safe on a cloud page: the person chooses in a native menu; no direct switching, saved-list reads, host files or secrets.
   workspaces: {
     state: () => ipcRenderer.invoke("workspaces:state"),
-    menu: (options) => ipcRenderer.invoke("workspaces:menu", ...(options?.from === "howto" ? ["howto"] : [])),
+    menu: (options) => {
+      if (!options) return ipcRenderer.invoke("workspaces:menu");
+      const payload = {};
+      if (options.from === "howto") payload.from = "howto";
+      if (options.labels && typeof options.labels === "object") {
+        const labels = {};
+        for (const key of ["local", "addCloud", "addCloudSublabel", "connect", "forget"]) {
+          const value = options.labels[key];
+          if (typeof value === "string" && value.length > 0 && value.length <= 200) labels[key] = value;
+        }
+        if (Object.keys(labels).length) payload.labels = labels;
+      }
+      return Object.keys(payload).length
+        ? ipcRenderer.invoke("workspaces:menu", payload)
+        : ipcRenderer.invoke("workspaces:menu");
+    },
     line: () => ipcRenderer.invoke("workspaces:line"),
   },
   getCapabilities: () => ipcRenderer.invoke("desktop:capabilities"),

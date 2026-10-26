@@ -133,6 +133,6 @@ get the skills in their turn's index, task folder links and `/name`, that a
 Claude turn with "Also use my Claude Code skills" on sees a Claude Code skill
 once, and that a bot can switch one off for itself. Screenshots of the step in
 Midnight and Daylight, at a narrow width, working, failed and with its result
-came from `onboarding-preview.html` with a fixture detection (`?beat=import`,
+came from `preview/onboarding-preview.html` with a fixture detection (`?beat=import`,
 `?import=notes`, `?import=fail`, `?w=390&h=760`). Not covered here: the
 packaged Electron window itself.

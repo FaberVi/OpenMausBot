@@ -372,6 +372,8 @@ export function CloudComputersCard({
 }) {
   return (
     <Card
+      collapsible
+      defaultOpen={false}
       title={t("vm.cloud.title")}
       subtitle={t("vm.cloud.subtitle")}
     >
@@ -1235,6 +1237,8 @@ export function LocalComputerSection() {
 
       {!cloudHome && <>
       <Card
+        collapsible
+        defaultOpen
         title={t("vm.main.title")}
         subtitle={perBot
           ? t("vm.main.perBotSubtitle", { host })
@@ -1287,6 +1291,8 @@ export function LocalComputerSection() {
       </Card>
 
       <Card
+        collapsible
+        defaultOpen={false}
         title={t("vm.isolation.title")}
         subtitle={t("vm.isolation.subtitle")}
       >
@@ -1331,7 +1337,7 @@ export function LocalComputerSection() {
         {policyPending && <div className="mt-2 flex items-center gap-1.5 text-[12px] text-ink-secondary"><Loader2 size={12} className="animate-spin" /> {t("vm.saving")}</div>}
       </Card>
 
-      <Card title={t("vm.setup.title")} subtitle={t("vm.setup.subtitle")}>
+      <Card collapsible defaultOpen={false} title={t("vm.setup.title")} subtitle={t("vm.setup.subtitle")}>
         <div className="flex flex-col gap-4">
           <Step n={1} title={t("vm.setup.step1")} done={Boolean(status?.runtime)}>
             <div className="text-[13px] leading-relaxed text-ink-secondary">
@@ -1441,6 +1447,8 @@ export function LocalComputerSection() {
       )}
 
       <Card
+        collapsible
+        defaultOpen={false}
         title={t("vm.safety.title")}
         subtitle={
           perBot

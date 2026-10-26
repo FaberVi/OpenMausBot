@@ -1,3 +1,4 @@
+# Dependencies and build outputs
 node_modules
 .worktrees/
 dist
@@ -7,15 +8,21 @@ dist-native
 # which package:prepare runs before electron-builder stages it
 dist-companion
 dist-server
-*.local
-.DS_Store
-*.tsbuildinfo
-electron/resources/speech-helper
-electron/resources/OpenMausBot Speech.app
-# stale helper from the removed Teach a skill recorder
-electron/resources/OpenMausBot Recorder.app
 release
+*.tsbuildinfo
+
+# Local settings and secrets (see deploy/.env.example and .env.example)
+*.local
+/.env
+deploy/.env
+deploy/podman/.env
+deploy/podman/.env.*
+!deploy/podman/.env.example
+
+# Tooling caches and scratch
 .omb-scratch
+.tmpexp/
+.venv/
 .wrangler/
 .dev.vars
 .dev.vars.*
@@ -26,6 +33,15 @@ cloudflare/control-plane/worker-configuration.d.ts
 .vercel/
 .pi/
 
+# Desktop / OS noise
+.DS_Store
+
+# Electron resources built on the packaging machine, not checked in
+electron/resources/speech-helper
+electron/resources/OpenMausBot Speech.app
+# stale helper from the removed Teach a skill recorder
+electron/resources/OpenMausBot Recorder.app
+
 # Release signing material. The signing keys for the mobile stores belong to the
 # maintainer and never enter this repository; these patterns are the second line
 # of defence behind that rule, repo-wide rather than per-platform, because a key
@@ -33,10 +49,3 @@ cloudflare/control-plane/worker-configuration.d.ts
 *.jks
 *.keystore
 *.p12
-
-# per-tenant deploy settings (see deploy/.env.example)
-deploy/.env
-deploy/podman/.env
-deploy/podman/.env.*
-!deploy/podman/.env.example
-/.env

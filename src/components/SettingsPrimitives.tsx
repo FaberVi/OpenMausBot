@@ -1,5 +1,5 @@
-import { useId, type ComponentProps } from "react";
-import { Check, Copy, X } from "lucide-react";
+import { useId, useState, type ComponentProps } from "react";
+import { Check, ChevronDown, Copy, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useCopyFeedback } from "@/lib/copy-text";
 import { t } from "@/lib/i18n";
@@ -35,16 +35,54 @@ export function Card({
   title,
   subtitle,
   children,
+  collapsible = false,
+  defaultOpen = true,
 }: {
   title?: string;
   subtitle?: string;
   children?: React.ReactNode;
+  collapsible?: boolean;
+  defaultOpen?: boolean;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const panelId = useId();
+  const body = children && <div className={collapsible ? undefined : title || subtitle ? "mt-4" : undefined}>{children}</div>;
+
+  if (!collapsible || !title) {
+    return (
+      <div className="rounded-xl bg-card p-4 max-md:rounded-2xl">
+        {title && <div className="text-[16px] font-semibold text-ink">{title}</div>}
+        {subtitle && <div className={title ? "mt-0.5 text-[13px] leading-relaxed text-ink-secondary" : "text-[13px] leading-relaxed text-ink-secondary"}>{subtitle}</div>}
+        {body}
+      </div>
+    );
+  }
+
+  const toggleLabel = open
+    ? t("settings.collapsible.collapse", { title })
+    : t("settings.collapsible.expand", { title });
+
   return (
-    <div className="rounded-xl bg-card p-4 max-md:rounded-2xl">
-      {title && <div className="text-[16px] font-semibold text-ink">{title}</div>}
-      {subtitle && <div className={title ? "mt-0.5 text-[13px] leading-relaxed text-ink-secondary" : "text-[13px] leading-relaxed text-ink-secondary"}>{subtitle}</div>}
-      {children && <div className={title || subtitle ? "mt-4" : undefined}>{children}</div>}
+    <div className="rounded-xl bg-card max-md:rounded-2xl">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={panelId}
+        aria-label={toggleLabel}
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full cursor-pointer items-start gap-3 p-4 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+      >
+        <div className="min-w-0 flex-1">
+          <div className="text-[16px] font-semibold text-ink">{title}</div>
+          {subtitle && <div className="mt-0.5 text-[13px] leading-relaxed text-ink-secondary">{subtitle}</div>}
+        </div>
+        <ChevronDown
+          size={18}
+          aria-hidden="true"
+          className={cn("mt-0.5 shrink-0 text-ink-secondary transition-transform motion-reduce:transition-none", open && "rotate-180")}
+        />
+      </button>
+      {open && body && <div id={panelId} className="px-4 pb-4">{body}</div>}
     </div>
   );
 }

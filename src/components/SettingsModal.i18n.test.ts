@@ -59,6 +59,23 @@ describe("Settings → General", () => {
     expect(ja).not.toContain("Provedores de modelos");
   });
 
+  it("renders Settings in Italian", async () => {
+    setLocale("it");
+    const html = await renderSettings();
+    const shown = (value: string) => value.replaceAll("&", "&amp;").replaceAll("'", "&#x27;");
+    for (const key of [
+      "settings.title", "settings.section.engines", "settings.language.aria", "settings.roomTurns.label",
+      "settings.group.you", "settings.group.computers",
+      "settings.section.appearance", "settings.section.backups", "settings.section.people",
+      "settings.advancedMode.title",
+    ] as const) {
+      expect(locales.it[key], key).toBeTruthy();
+      expect(locales.it[key], key).not.toBe(en[key]);
+      expect(html, key).toContain(shown(locales.it[key]!));
+    }
+    expect(html).toContain(shown(locales.it["settings.group.account"]!));
+  });
+
   it("stays English when no language is picked", async () => {
     setLocale("en");
     const en = await renderSettings();

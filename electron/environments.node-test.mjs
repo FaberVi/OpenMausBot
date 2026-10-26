@@ -99,7 +99,7 @@ test("hosted workspace input accepts addresses and keeps valid codes only in the
 test("workspace shell exposes only current identity and rejects subframes and unrelated windows", () => {
   const state = { environments: [{ id: "cloud", name: "Acme", origin: "https://acme.example" }], activeId: "cloud" };
   assert.deepEqual(env.workspaceSummary(state), { local: false, name: "Acme", origin: "https://acme.example" });
-  assert.deepEqual(env.workspaceSummary({ ...state, activeId: "local" }), { local: true, name: "This computer" });
+  assert.deepEqual(env.workspaceSummary({ ...state, activeId: "local" }), { local: true, name: "This computer", defaultLocal: true });
   const local = "http://127.0.0.1:18799";
   const contents = { mainFrame: { url: "https://acme.example/" } };
   const event = { sender: contents, senderFrame: contents.mainFrame };
@@ -139,6 +139,23 @@ test("native workspace choices use saved IDs and connect opens settings without 
   items.find((item) => item.id === "workspace-forget").click();
   assert.deepEqual(calls, [["switch", "local"], ["settings"], ["forget", "cloud"]]);
   assert.equal(state.activeId, "cloud");
+});
+
+test("workspace menu labels from the page override English defaults", () => {
+  const state = { environments: [{ id: "cloud", name: "a$&b", origin: "https://acme.example" }], activeId: "cloud" };
+  const labels = {
+    local: "Questo computer",
+    addCloud: "Aggiungi un Cloud…",
+    addCloudSublabel: "Tiene i bot attivi 24/7",
+    connect: "Collegati a un server…",
+    forget: "Dimentica «{name}»…",
+  };
+  const items = env.workspaceMenuTemplate(state, { onSwitch() {}, onConnect() {}, onForget() {}, onAddCloud() {}, labels });
+  assert.equal(items.find((item) => item.id === "workspace-local").label, "Questo computer");
+  assert.equal(items.find((item) => item.id === "workspace-add-cloud").label, "Aggiungi un Cloud…");
+  assert.equal(items.find((item) => item.id === "workspace-add-cloud").sublabel, "Tiene i bot attivi 24/7");
+  assert.equal(items.find((item) => item.id === "workspace-connect").label, "Collegati a un server…");
+  assert.equal(items.find((item) => item.id === "workspace-forget").label, "Dimentica «a$&b»…");
 });
 
 test("Add a Cloud… sits just under the saved servers only where main offers it, and My Cloud's line can say Always on", () => {
@@ -348,7 +365,7 @@ test("a named local environment is this computer with its path, and gets its own
   assert.deepEqual(env.workspaceSummary(state), { local: true, name: "APRS Chat", localPath: "/Users/me/.openmausbot-aprs", missing: false });
   assert.deepEqual(env.workspaceSummary({ ...state, environments: [{ ...localEntry, missing: true }, ...state.environments.slice(1)] }),
     { local: true, name: "APRS Chat", localPath: "/Users/me/.openmausbot-aprs", missing: true });
-  assert.deepEqual(env.workspaceSummary({ ...state, activeId: "local" }), { local: true, name: "This computer" });
+  assert.deepEqual(env.workspaceSummary({ ...state, activeId: "local" }), { local: true, name: "This computer", defaultLocal: true });
   assert.deepEqual(env.workspaceSummary({ ...state, activeId: "r1" }), { local: false, name: "Office", origin: "https://box.example" });
   const calls = [];
   const items = env.workspaceMenuTemplate(state, { onSwitch: (id) => calls.push(id), onConnect: () => {}, onForget: () => {} });

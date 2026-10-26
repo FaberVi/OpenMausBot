@@ -42,7 +42,7 @@ export function BotSettingsDialog({ bot, overlay = false }: {
   const section = state.botSettingsSection;
   const derived = useBotSettingsDerived(bot);
   const dialogRef = useRef<HTMLElement | null>(null);
-  const { padClass, dragProps } = useCaptionChrome();
+  const { padClass, dragProps, windowsCaption } = useCaptionChrome();
   const [query, setQuery] = useState("");
   const collapsed = !state.botSettingsExpandAccordion;
   const q = query.trim().toLowerCase();
@@ -182,7 +182,7 @@ export function BotSettingsDialog({ bot, overlay = false }: {
             onClose={() => dispatch({ type: "toggleSettings", open: false })}
           />
         ) : <>
-        <div {...dragProps} className={cn("flex shrink-0 items-center justify-between px-4 py-3", padClass)}>
+        <div {...dragProps} className={cn("flex shrink-0 items-center justify-between px-4 py-3", padClass, windowsCaption && "pr-[132px]")}>
           <span id="bot-settings-title" className="truncate text-[15px] font-semibold text-ink">
             {bot.name}
           </span>

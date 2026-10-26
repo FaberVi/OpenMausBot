@@ -38,7 +38,7 @@ export function AutomaticRecoverySettings() {
     }
   };
   return (
-    <Card title={t("settings.recovery.title")}>
+    <Card collapsible defaultOpen={false} title={t("settings.recovery.title")}>
       <div className="flex items-center justify-between gap-4">
         <label htmlFor="automatic-recovery-enabled" className="text-[13px] font-medium text-ink">{t("settings.recovery.enable")}</label>
         <Switch id="automatic-recovery-enabled" checked={value.enabled} disabled={saving || !state.config}

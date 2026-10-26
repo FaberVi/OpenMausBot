@@ -147,7 +147,7 @@ const DETECTORS: Detector[] = [
   {
     role: "infra",
     deps: [],
-    paths: ["Dockerfile", "docker-compose.yml", "docker-compose.yaml", "compose.yaml", ".github/workflows", "terraform", "helm"],
+    paths: ["deploy/Dockerfile", "Dockerfile", "docker-compose.yml", "docker-compose.yaml", "compose.yaml", ".github/workflows", "terraform", "helm"],
   },
   {
     role: "docs",
@@ -170,7 +170,7 @@ const STACK_MARKERS: Array<{ stack: string; deps?: string[]; paths?: string[] }>
   { stack: "Ruby", paths: ["Gemfile"] },
   { stack: "PHP", paths: ["composer.json"] },
   { stack: "Java", paths: ["pom.xml", "build.gradle", "build.gradle.kts"] },
-  { stack: "Docker", paths: ["Dockerfile", "docker-compose.yml", "compose.yaml"] },
+  { stack: "Docker", paths: ["deploy/Dockerfile", "Dockerfile", "docker-compose.yml", "compose.yaml"] },
 ];
 
 export function scoutProject(cwd: string): ProjectProfile {

@@ -153,9 +153,9 @@ const __APP_VERSION__: string;
       workspaces?: {
         /** `color`: a saved server's colour name (its owner chose it while setting the Cloud up); `home`: this window's
          * home is this Cloud, so there is nothing to switch to. */
-        state: () => Promise<{ local: boolean; name: string; origin?: string; color?: string; home?: boolean; role?: string }>;
+        state: () => Promise<{ local: boolean; name: string; defaultLocal?: boolean; origin?: string; color?: string; home?: boolean; role?: string }>;
         /** The native server menu; resolves when it closes. `from: "howto"`: the Show me how tip opened it. */
-        menu: (options?: { from?: "howto" }) => Promise<void>;
+        menu: (options?: { from?: "howto"; labels?: { local: string; addCloud: string; addCloudSublabel: string; connect: string; forget: string } }) => Promise<void>;
         /** One plain line for the next page, served once: a team this person is no longer in. */
         line?: () => Promise<{ kind: "left"; name: string } | null>;
       };
