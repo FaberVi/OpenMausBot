@@ -42,6 +42,6 @@ The root stays relatively flat: Node, Vite, Docker, and GitHub expect certain en
 pnpm dev
 pnpm dev:server
 docker compose up -d --build                    # uses root compose.yaml shim
-docker compose -f deploy/local/compose.yaml up  # explicit path
+docker compose --env-file .env -f deploy/local/compose.yaml up -d --build  # explicit path; root .env
 ./maus.ps1 ps                                   # Windows Docker helper
 ```

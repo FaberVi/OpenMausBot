@@ -29,7 +29,7 @@ function render() {
 }
 const flush = async () => { for (let i = 0; i < 20; i++) await Promise.resolve(); };
 
-const VPS = { id: "vps", name: "VPS", origin: "https://bots.example.test" };
+const VPS = { id: "vps", name: "VPS", origin: "https://bots.example.test", kind: "remote" as const };
 function stub(extra: Record<string, unknown> = {}) {
   vi.stubGlobal("window", {
     ogb: { environments: { state: vi.fn().mockResolvedValue({ localOrigin: "http://127.0.0.1:1", remote: false, activeId: "local", environments: [VPS] }),
@@ -37,7 +37,12 @@ function stub(extra: Record<string, unknown> = {}) {
     location: { search: "", href: "http://127.0.0.1:1/settings" }, history: { replaceState: () => {} },
   });
 }
-async function mount() { render(); for (const effect of f.effects) effect(); await flush(); }
+async function mount() {
+  render();
+  for (const effect of f.effects) effect();
+  await flush();
+  render();
+}
 beforeEach(() => {
   f.values = []; f.index = 0; f.effects = [];
   stub(); setLocale("en");
@@ -78,7 +83,7 @@ it("lists local environments with their folders above the servers, marking a mis
   expect(html.indexOf("Environments on this computer")).toBeLessThan(html.indexOf("Your servers"));
   expect(html).toContain("/home/me/.openmausbot-work");
   expect(html.match(/>missing</g)).toHaveLength(1);
-  expect(html).not.toContain("https://bots.example.test");
+  expect(html).toContain("https://bots.example.test");
 });
 
 it("hides local environments and the create form in a dev build", async () => {

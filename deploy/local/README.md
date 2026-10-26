@@ -1,10 +1,13 @@
 # Local Docker Compose
 
-From the repository root, run `docker compose up -d --build` (or
-`docker compose -f deploy/local/compose.yaml up -d --build`), then open
+From the repository root, run `docker compose up -d --build`, then open
 http://localhost:8080. Docker with Linux containers is required.
-Compose definition: [`compose.yaml`](compose.yaml) in this folder; the root
-[`compose.yaml`](../../compose.yaml) file only includes it for convenience.
+The root [`compose.yaml`](../../compose.yaml) includes
+[`deploy/local/compose.yaml`](compose.yaml) and loads a repository-root `.env`
+when present. Invoking `deploy/local/compose.yaml` directly skips that file unless
+you pass `--env-file` for the repository root (for example
+`docker compose --env-file .env -f deploy/local/compose.yaml up -d --build` from the
+repository root).
 Compose supplies defaults; no `.env` file is required.
 The application container uses Docker's init process to reap orphaned agent
 subprocesses.

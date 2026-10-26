@@ -140,7 +140,7 @@ export function ConnectedWorkspacesSettings() {
         </button>
       </form>
     </Card>}
-    <Card collapsible defaultOpen={true} title={t("settings.desktopWorkspaces.servers.title")} subtitle={t("settings.desktopWorkspaces.servers.subtitle")}>
+    <Card title={t("settings.desktopWorkspaces.servers.title")} subtitle={t("settings.desktopWorkspaces.servers.subtitle")}>
       {!saved ? <p role="status" className="text-[13px] text-ink-secondary">{error ? t("settings.desktopWorkspaces.loadFailed") : t("settings.desktopWorkspaces.loading")}</p> :
         <ul className="divide-y divide-hairline/40">
           {[{ id: "local", name: localComputerName, origin: "", color: undefined }, ...saved.environments.filter((entry) => entry.kind !== "local")].map((entry) => {

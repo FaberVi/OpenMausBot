@@ -40,7 +40,7 @@ describe("Settings → General", () => {
     expect(pt).toContain("Configurações");
     expect(pt).toContain("Provedores de modelos");
     expect(pt).toContain("Idioma do app");
-    expect(pt).toContain("Duração máxima do turno");
+    expect(pt).toContain("Turnos em grupos");
 
     // Same module instance, no reload: a frozen label would still say "Provedores de modelos" here.
     setLocale("ja");
@@ -64,7 +64,7 @@ describe("Settings → General", () => {
     const html = await renderSettings();
     const shown = (value: string) => value.replaceAll("&", "&amp;").replaceAll("'", "&#x27;");
     for (const key of [
-      "settings.title", "settings.section.engines", "settings.language.aria", "settings.roomTurns.label",
+      "settings.title", "settings.section.engines", "settings.language.aria", "settings.roomTurns.title",
       "settings.group.you", "settings.group.computers",
       "settings.section.appearance", "settings.section.backups", "settings.section.people",
       "settings.advancedMode.title",
@@ -81,7 +81,7 @@ describe("Settings → General", () => {
     const en = await renderSettings();
     expect(en).toContain("Settings");
     expect(en).toContain("Model providers");
-    expect(en).toContain("Maximum turn length");
+    expect(en).toContain("Group turns");
   });
 
   it("offers a labeled compact section picker without removing desktop navigation", async () => {

@@ -152,25 +152,32 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
       try {
         const nativeUrl = loopbackLmStudioV1Url(config.url);
         if (nativeUrl) {
-          const native = await fetch(nativeUrl, {
-            headers: { authorization: `Bearer ${apiKey}` },
-            signal: AbortSignal.timeout(8_000),
-          });
-          if (native.ok) {
-            let parsed: ReturnType<typeof lmStudioV1Catalog> = null;
-            try {
-              parsed = lmStudioV1Catalog(await native.json());
-            } catch {
-              parsed = null;
+          try {
+            const native = await fetch(nativeUrl, {
+              headers: { authorization: `Bearer ${apiKey}` },
+              signal: AbortSignal.timeout(8_000),
+            });
+            if (native.ok) {
+              let parsed: ReturnType<typeof lmStudioV1Catalog> = null;
+              try {
+                parsed = lmStudioV1Catalog(await native.json());
+              } catch {
+                parsed = null;
+              }
+              if (parsed?.ids.length) {
+                const options = parsed.ids.map((id) => ({ id, label: id, custom: true as const }));
+                if (config.model && !options.some((model) => model.id === config.model)) {
+                  options.unshift({ id: config.model, label: config.model, custom: true });
+                }
+                catalog = {
+                  default: config.model ?? options[0]!.id,
+                  options,
+                };
+                return;
+              }
             }
-            if (parsed?.ids.length) {
-              const options = parsed.ids.map((id) => ({ id, label: id, custom: true as const }));
-              catalog = {
-                default: config.model && parsed.ids.includes(config.model) ? config.model : options[0]!.id,
-                options,
-              };
-              return;
-            }
+          } catch {
+            // Native LM Studio catalog unavailable; try OpenAI-compatible /models below.
           }
         }
         const response = await fetch(`${config.url}/models`, {

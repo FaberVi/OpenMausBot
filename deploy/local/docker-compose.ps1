@@ -9,5 +9,5 @@ if (-not (Test-Path -LiteralPath $dockerPath)) {
 if (-not (Test-Path -LiteralPath $dockerPath)) {
     throw 'Docker CLI was not found. Install Docker Desktop and add docker to PATH.'
 }
-& $dockerPath compose --project-directory $RepoRoot -f (Join-Path $RepoRoot 'deploy\local\compose.yaml') @ComposeArgs
+& $dockerPath compose --project-directory $RepoRoot -f (Join-Path $RepoRoot 'compose.yaml') @ComposeArgs
 exit $LASTEXITCODE
