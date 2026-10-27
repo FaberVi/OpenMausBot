@@ -1,8 +1,5 @@
 import type { WireBot, WireGroup } from "../../shared/wire.ts";
-import {
-  ATTACHMENTS_DIR, extensionForMime, FILE_MAX_BYTES, IMAGE_MAX_BYTES, parseAudioRange, readAttachment, saveFile, saveImageUpload,
-  validateAttachmentUploadId, type SavedAttachment,
-} from "../attachments.ts";
+import { ATTACHMENTS_DIR } from "../attachments.ts";
 import { deliveredCopy } from "../bot-attachment.ts";
 import { memberBot, memberGroup, type Viewer, type VisibleSet } from "../bot-visibility.ts";
 import type { ComputerControl } from "../computer-control.ts";
@@ -19,6 +16,7 @@ import { resolveRequestAuth, type RequestAuth, type ResolveOptions } from "../re
 import type { queuedSteerSnapshot } from "../steer-queue.ts";
 import type { BotRecord, GroupRecord, Message, Store } from "../store.ts";
 import { createJobRoutes } from "./jobs.ts";
+import { handleThreadUploadRoutes } from "./threads-upload-routes.ts";
 import { PASS, type RouteContext, type RouteHandler } from "./table.ts";
 
 export type MessagePage = { messages: Array<Message | Record<string, unknown>>; hasMore?: boolean; activeLeafId: string | null };
@@ -264,132 +262,7 @@ export function createThreadRoutes(deps: ThreadRouteDeps): RouteHandler {
       return;
     }
 
-    // Raw bytes, not base64 JSON; retrying a UUID uploadId returns the same committed path.
-    if (method === "POST" && path === "/api/attachments") {
-      let uploadId: string | undefined;
-      try {
-        uploadId = validateAttachmentUploadId(url.searchParams.get("uploadId") ?? undefined);
-      } catch (error) {
-        req.resume();
-        throw error;
-      }
-      const rawType = Array.isArray(req.headers["content-type"]) ? req.headers["content-type"][0] : req.headers["content-type"];
-      const mime = rawType?.split(";")[0]?.trim().toLowerCase();
-      if (!mime || !extensionForMime(mime)) {
-        return json(res, 400, { error: "content-type must be an image type" });
-      }
-      const rawLength = Array.isArray(req.headers["content-length"])
-        ? req.headers["content-length"][0]
-        : req.headers["content-length"];
-      const declaredLength = rawLength === undefined ? undefined : Number(rawLength);
-      if (declaredLength !== undefined && (!Number.isSafeInteger(declaredLength) || declaredLength < 0)) {
-        req.resume();
-        return json(res, 400, { error: "content-length must be a non-negative integer" });
-      }
-      if (declaredLength !== undefined && declaredLength > IMAGE_MAX_BYTES) {
-        req.resume();
-        return json(res, 413, { error: `image exceeds ${IMAGE_MAX_BYTES} bytes` });
-      }
-      const saved = await new Promise<SavedAttachment>((resolve, reject) => {
-        const chunks: Buffer[] = [];
-        let received = 0;
-        let settled = false;
-        const fail = (status: number, msg: string) => {
-          if (settled) return;
-          settled = true;
-          reject(Object.assign(new Error(msg), { status }));
-        };
-        req.on("data", (chunk: Buffer) => {
-          if (settled) return;
-          received += chunk.byteLength;
-          if (received > IMAGE_MAX_BYTES) return fail(413, `image exceeds ${IMAGE_MAX_BYTES} bytes`);
-          chunks.push(chunk);
-        });
-        req.on("end", async () => {
-          if (settled) return;
-          settled = true;
-          try {
-            resolve(await saveImageUpload(Buffer.concat(chunks), mime, uploadId));
-          } catch (e) {
-            reject(e instanceof Error ? e : new Error(String(e)));
-          }
-        });
-        req.on("error", (e) => fail(400, e instanceof Error ? e.message : String(e)));
-      });
-      return json(res, 201, saved);
-    }
-
-    // Raw bytes; a UUID uploadId is stable across retries, and the quota rejects rather than delete files old prompts reference.
-    if (method === "POST" && path === "/api/files") {
-      let uploadId: string | undefined;
-      try {
-        uploadId = validateAttachmentUploadId(url.searchParams.get("uploadId") ?? undefined);
-      } catch (error) {
-        req.resume();
-        throw error;
-      }
-      const name = url.searchParams.get("name");
-      if (!name) {
-        req.resume();
-        return json(res, 400, { error: "name is required" });
-      }
-      const rawType = Array.isArray(req.headers["content-type"])
-        ? req.headers["content-type"][0]
-        : req.headers["content-type"];
-      const rawLength = Array.isArray(req.headers["content-length"])
-        ? req.headers["content-length"][0]
-        : req.headers["content-length"];
-      const declaredLength = rawLength === undefined ? undefined : Number(rawLength);
-      if (declaredLength !== undefined && (!Number.isSafeInteger(declaredLength) || declaredLength < 0)) {
-        req.resume();
-        return json(res, 400, { error: "content-length must be a non-negative integer" });
-      }
-      if (declaredLength !== undefined && declaredLength > FILE_MAX_BYTES) {
-        req.resume();
-        return json(res, 413, { error: `file exceeds ${FILE_MAX_BYTES} bytes` });
-      }
-      try {
-        // Returning must not destroy the socket: the caller still sends the 4xx when the byte count crosses the limit.
-        const chunks = req.iterator({ destroyOnReturn: false }) as AsyncIterable<Buffer>;
-        const saved = await saveFile(chunks, name, rawType ?? "", { uploadId, expectedBytes: declaredLength });
-        return json(res, 201, saved);
-      } catch (error) {
-        req.resume();
-        throw error;
-      }
-    }
-
-    // Name-locked to the attachments dir: readAttachment refuses anything but a bare generated filename.
-    m = path.match(/^\/api\/attachments\/([\w.-]+)$/);
-    if (m && method === "GET") {
-      const attachment = readAttachment(m[1]!);
-      if (!attachment) return json(res, 404, { error: "no such attachment" });
-      const size = attachment.bytes.byteLength;
-      // Visibility is decided per request, so the browser must never reuse one member's copy for another identity.
-      const headers = {
-        "content-type": attachment.mime,
-        "cache-control": "private, no-store",
-        "x-content-type-options": "nosniff",
-      };
-      if (attachment.mime.startsWith("audio/")) {
-        const rawRange = Array.isArray(req.headers.range) ? req.headers.range[0] : req.headers.range;
-        const range = parseAudioRange(rawRange, size);
-        if (range.kind === "unsatisfiable") {
-          res.writeHead(416, { ...headers, "content-range": `bytes */${size}` });
-          return res.end();
-        }
-        if (range.kind === "range") {
-          res.writeHead(206, {
-            ...headers,
-            "content-length": String(range.end - range.start + 1),
-            "content-range": `bytes ${range.start}-${range.end}/${size}`,
-          });
-          return res.end(attachment.bytes.subarray(range.start, range.end + 1));
-        }
-      }
-      res.writeHead(200, { ...headers, "content-length": String(size) });
-      return res.end(attachment.bytes);
-    }
+    if (await handleThreadUploadRoutes({ req, res, url, path, method, auth, json, readBody })) return;
 
     if (method === "GET" && path === "/api/search") {
       const q = url.searchParams.get("q") ?? "";

@@ -1,26 +1,19 @@
 import { join } from "node:path";
 
 import type { BeginTurnRequest, Coordinator, CoordinatorHost, CoordinatorOptions, HandoffOptions, HandoffView, HostTurnResult, LiveHandoffEdge, RoomAddress } from "./coordinator.ts";
-import type { WorkOrigin } from "./peer-provenance.ts";
-import { composeEnvelope, composeQuestion, composeReport, composeResume, composeRootTurn, continuationLine, envelopeNote } from "./runtime/envelope.ts";
+import { composeEnvelope, envelopeNote } from "./runtime/envelope.ts";
 import { Runtime } from "./runtime/runtime.ts";
 import { importLegacyDelegations, importLegacyHandoffs, type LegacyThreadResolver } from "./runtime/import-legacy.ts";
 import { openRuntimeStore, type RuntimeStore } from "./runtime/store.ts";
-import { childrenSince, clip, isTerminal, path } from "./runtime/tree.ts";
-import type { Assignment, EndResult, Origin, Owner, Reply, Requester, RunInput, RunResult, StatusView, TurnRunner } from "./runtime/types.ts";
+import { childrenSince, isTerminal } from "./runtime/tree.ts";
+import type { Assignment, EndResult, Owner, StatusView, TurnRunner } from "./runtime/types.ts";
+import { coordinatorEnqueue } from "./runtime-coordinator-enqueue.ts";
+import { coordinatorRunTurn } from "./runtime-coordinator-turn.ts";
+import { runtimeOrigin, view } from "./runtime-coordinator-view.ts";
 
-const NOT_RUNNING = "The originating room task is no longer running";
-const WRONG_SPEAKER = "The handoff belongs to a different room speaker";
-const ANCESTOR = "Cannot assign work back to an ancestor; results return automatically";
-const ALREADY_COMPLETED = "This agent already completed your assignment. Do not send acknowledgements or approvals as new work. Finish with your decision; results return automatically. Only use rework=true for concrete additional work.";
-const ROOM_ANCESTOR = "A room request cannot return to an ancestor room; results are returned automatically";
-const DEPTH = "Room handoff depth limit reached";
-const BUDGET = "Room handoff budget exhausted";
-const NO_TURN = "The requesting turn has no root (no turn)";
+export { needsInputQuestion, view } from "./runtime-coordinator-view.ts";
 
 const BRIEF_MAX = 12_000;
-const RUNTIME_DEPTH = /^Assignment depth limit reached/;
-const NEEDS_INPUT = /^needs input:/i;
 
 /** Per-turn stalls belong to the host's watchdog: this only keeps the runtime's window out of its way. */
 const TURN_STALL_MS = 24 * 60 * 60_000;
@@ -30,69 +23,6 @@ const EXECUTIONS_PER_ROOT = 96;
 
 const PRUNE_AFTER_MS = 30 * 24 * 60 * 60_000;
 const PRUNE_EVERY_MS = 24 * 60 * 60_000;
-
-const address = (a: Assignment): RoomAddress => {
-  const { groupId, threadId } = a.assignee.destination;
-  return { threadId, botId: a.assignee.botId, ...(groupId !== undefined ? { groupId } : {}) };
-};
-
-const sameSpeaker = (a: Assignment, source: RoomAddress): boolean =>
-  a.assignee.destination.groupId === source.groupId && a.assignee.destination.threadId === source.threadId && a.assignee.botId === source.botId;
-
-const ancestorOf = (ancestor: RoomAddress, target: RoomAddress): boolean =>
-  ancestor.botId === target.botId && (!ancestor.groupId || !target.groupId || ancestor.groupId === target.groupId);
-
-const kindOf = (groupId: string | undefined, parent: Assignment | undefined): HandoffView["kind"] =>
-  groupId !== undefined && parent?.assignee.destination.groupId === groupId ? "assignment" : "work";
-
-function legacyOrigin(origin: Origin): WorkOrigin | undefined {
-  if (origin.kind !== "person") return { kind: "outside" };
-  return origin.quote ? { kind: "user", request: origin.quote } : undefined;
-}
-
-const hostFirstTurn = (a: Assignment): boolean => !a.parentId && a.status === "running" && a.executions === 1;
-
-function runtimeOrigin(origin: WorkOrigin | undefined, source: RoomAddress): Origin {
-  return origin?.kind === "user"
-    ? { kind: "person", source: "chat", ref: source.threadId, quote: origin.request }
-    : { kind: "outside", source: "chat", ref: source.threadId };
-}
-
-export function needsInputQuestion(text: string): string | undefined {
-  const lines = text.split(/\r?\n/);
-  let last = lines.length - 1;
-  while (last >= 0 && lines[last]!.trim() === "") last -= 1;
-  if (last < 0) return undefined;
-  const line = lines[last]!.trim();
-  if (!NEEDS_INPUT.test(line)) return undefined;
-  const question = [line.slice("NEEDS INPUT:".length), ...lines.slice(last + 1)].join("\n").trim();
-  return question || undefined;
-}
-
-export function view(a: Assignment, parent?: Assignment): HandoffView {
-  const groupId = a.assignee.destination.groupId;
-  const status: HandoffView["status"] = hostFirstTurn(a) ? "source" : a.status === "needs_input" ? "waiting" : a.status;
-  const node: HandoffView = {
-    id: a.id, rootId: a.rootId, threadId: a.assignee.destination.threadId, botId: a.assignee.botId, key: a.assignee.botId,
-    text: a.brief, createdAt: a.createdAt, status, result: a.result, reported: a.reportedAt !== undefined, executions: a.executions,
-    lastProgressAt: a.lastActivityAt, approvalGranted: a.approved ?? false, kind: kindOf(groupId, parent), restarts: a.restarts,
-    mode: a.mode, reply: a.reply,
-  };
-  if (a.outcome !== undefined) node.outcome = a.outcome;
-  if (a.outcomeDetail !== undefined) node.outcomeDetail = a.outcomeDetail;
-  if (a.question !== undefined) node.question = a.question;
-  if (a.cards !== undefined) node.cards = a.cards;
-  if (a.continuation !== undefined) node.continuation = { ...a.continuation };
-  if (a.goalRunId !== undefined) node.goalRunId = a.goalRunId;
-  if (a.parentId !== undefined) node.parentId = a.parentId;
-  if (groupId !== undefined) node.groupId = groupId;
-  if (a.batchKey !== undefined) node.requestBatchKey = a.batchKey;
-  if (a.startedAt !== undefined) node.startedAt = a.startedAt;
-  const origin = legacyOrigin(a.origin);
-  if (origin) node.origin = origin;
-  if (a.restart !== undefined) node.restart = a.restart;
-  return node;
-}
 
 export class RuntimeCoordinator implements Coordinator {
   private readonly host: CoordinatorHost;
@@ -177,46 +107,7 @@ export class RuntimeCoordinator implements Coordinator {
   enqueue(source: RoomAddress, generation: string, parentId: string | undefined, target: RoomAddress, text: string,
     options: HandoffOptions = {}): { node: HandoffView; duplicate: boolean } {
     this.ready();
-    const { approvalGranted = false, rework = false, requestBatchKey, thread } = options;
-    const mode = options.mode ?? "work";
-    const parent = parentId ? this.store.get(parentId) : this.store.get(generation);
-    if (!parent) throw new Error(parentId ? NOT_RUNNING : NO_TURN);
-    if (parent.status !== "running") throw new Error(NOT_RUNNING);
-    if (!sameSpeaker(parent, source)) throw new Error(WRONG_SPEAKER);
-    const brief = clip(text, BRIEF_MAX);
-    const kind: HandoffView["kind"] = target.groupId !== undefined && target.groupId === source.groupId ? "assignment" : "work";
-    const lineage = path(this.store, parent);
-    const root = lineage[0]!;
-    if (lineage.some(n => ancestorOf(address(n), target))) throw new Error(ANCESTOR);
-    const siblings = this.store.children(parent.id);
-    const existing = siblings.findLast(c => c.assignee.botId === target.botId && c.assignee.destination.groupId === target.groupId && c.brief === brief && c.mode === mode);
-    if (existing && !(rework && isTerminal(existing))) return { node: view(existing, parent), duplicate: true };
-    if (mode === "work" && !rework && siblings.some(c => c.mode === "work" && kindOf(c.assignee.destination.groupId, parent) === kind &&
-      c.assignee.destination.groupId === target.groupId && c.assignee.botId === target.botId && c.status === "completed")) throw new Error(ALREADY_COMPLETED);
-    if (kind === "work" && target.groupId && lineage.some(n => n.assignee.destination.groupId === target.groupId)) throw new Error(ROOM_ANCESTOR);
-    const wanted: Reply = mode === "notify" ? "none" : options.reply ?? "resume";
-    const reply: Reply = wanted === "none" ? "none" : root.reply === "poll" ? "poll" : wanted;
-    const requester: Requester = { kind: "bot_turn", botId: parent.assignee.botId, threadId: parent.assignee.destination.threadId,
-      chief: this.host.chiefOf(address(parent)), ...(parent.id === root.id && root.requester.runId !== undefined ? { runId: root.requester.runId } : {}) };
-    const level = this.host.levelOf(target, this.project(parent));
-    const result = this.runtime.enqueue({
-      parentId: parent.id,
-      origin: parent.origin,
-      requester,
-      assignee: { botId: target.botId, destination: { kind: target.groupId ? "room_thread" : thread === "standing" ? "standing_thread" : "work_thread",
-        threadId: target.threadId, ...(target.groupId ? { groupId: target.groupId } : {}) } },
-      mode, reply, brief: text, rework,
-      ...(options.doneWhen ? { doneWhen: options.doneWhen } : {}),
-      levels: { own: level.level, ...(level.chief !== undefined ? { chief: level.chief } : {}) },
-      ...(level.driverKind !== undefined ? { driverKind: level.driverKind } : {}),
-      approved: approvalGranted,
-      ...(target.groupId && requestBatchKey ? { batchKey: requestBatchKey } : {}),
-    });
-    if (!result.ok) {
-      if (result.outcome === "budget") throw new Error(BUDGET);
-      throw new Error(RUNTIME_DEPTH.test(result.reason) ? DEPTH : result.reason);
-    }
-    return { node: view(result.assignment, parent), duplicate: result.duplicate };
+    return coordinatorEnqueue(this.store, this.runtime, this.host, a => this.project(a), source, generation, parentId, target, text, options);
   }
 
   status(id: string): StatusView | undefined {
@@ -452,7 +343,7 @@ export class RuntimeCoordinator implements Coordinator {
     return {
       validate: (a, parent) => host.validate(view(a, parent), parent && this.project(parent)),
       canStart: a => !host.busy(this.project(a)),
-      run: (a, input, signal) => this.run(a, input, signal),
+      run: (a, input, signal) => coordinatorRunTurn(host, this.store, (c, p, pv) => this.readable(c, p, pv), a => this.project(a), a, input, signal),
       park: (a, question, restored) => host.park(this.project(a), question, restored),
       report: (a, parent) => host.report(view(a, parent), parent && this.project(parent)),
       changed: rows => {
@@ -467,34 +358,6 @@ export class RuntimeCoordinator implements Coordinator {
       names: (a, parent) => host.names(view(a, parent), parent && this.project(parent)),
       outward: a => host.outward ? host.outward(this.project(a)) : [],
     };
-  }
-
-  private async run(a: Assignment, input: RunInput, signal: AbortSignal): Promise<RunResult> {
-    const parent = a.parentId ? this.store.get(a.parentId) : undefined;
-    const node = view(a, parent);
-    const resumed = input.turn === "resume";
-    const settled = input.settled ?? [];
-    const asked = input.asked ?? [];
-    const root = a.parentId === undefined;
-    const body = resumed
-      ? composeResume(a, this.host.names(node, parent && this.project(parent)),
-        settled.map(child => composeReport(this.readable(child, a, node), this.host.names(view(child, a), node))),
-        asked.map(child => composeQuestion(this.readable(child, a, node), this.host.names(view(child, a), node))))
-      : root
-        ? composeRootTurn(a, { turn: input.turn === "resume" ? "first" : input.turn, restartNote: "", ...(input.answer !== undefined ? { answer: input.answer } : {}),
-          ...(input.continuation ? { continuation: input.continuation } : {}) })
-        : input.continuation ? `${continuationLine(input.continuation)}\n${input.envelope}` : input.envelope;
-    const note = resumed || root ? body : envelopeNote(body);
-    const evidence = (result: HostTurnResult) => result.evidence ? { evidence: result.evidence } : {};
-    const result = await this.host.run(node, resumed, signal,
-      { text: `${input.restartNote}${body}`, note: `${input.restartNote}${note}`, restartNote: input.restartNote, turn: input.turn });
-    if (signal.aborted) return { kind: "failed", outcome: "stopped", text: result.text };
-    if (result.cap) return { kind: "continue", text: result.text, note: result.cap.note, ...(result.cap.handoffPath ? { handoffPath: result.cap.handoffPath } : {}), ...evidence(result) };
-    if (result.cards) return { kind: "needs_input", question: result.cards.question, cards: result.cards.ids, ...evidence(result) };
-    if (!result.ok) return { kind: "failed", outcome: result.stalled ? "stalled" : "provider_error", text: result.text, ...evidence(result) };
-    const question = root ? undefined : needsInputQuestion(result.text);
-    if (question !== undefined) return { kind: "needs_input", question, ...evidence(result) };
-    return { kind: "completed", text: result.text, ...evidence(result) };
   }
 
   private live(): Assignment[] {

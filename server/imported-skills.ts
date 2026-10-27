@@ -7,8 +7,8 @@
 // skills", Codex with the person's own CODEX_HOME) leaves the copy out, so no engine sees a skill twice.
 import { createHash, randomUUID } from "node:crypto";
 import {
-  closeSync, constants, fstatSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, readlinkSync, renameSync, rmSync,
-  statSync, symlinkSync, unlinkSync, writeFileSync,
+  closeSync, constants, fstatSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync,
+  statSync, writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
@@ -420,84 +420,4 @@ export function expandImportedSkillCommand(text: string, skills: readonly Import
     : `${lead} There is no further request, so run it as the skill describes.`;
 }
 
-const NATIVE_SKILL_DIRS = [".claude/skills", ".agents/skills", ".grok/skills"];
-
-/** Each level a real folder, never followed through a link. */
-function linkDirectory(root: string, relative: string, create: boolean): string | null {
-  let at = root;
-  for (const part of relative.split("/")) {
-    at = join(at, part);
-    if (create && directoryEntryState(at) === "missing") {
-      try {
-        mkdirSync(at, { mode: 0o700 });
-      } catch {
-        return null;
-      }
-    }
-    if (directoryEntryState(at) !== "directory") return null;
-  }
-  return at;
-}
-
-/** The link text only, never followed. */
-function linksToImported(link: string, name: string, base = dirname(link)): boolean {
-  try {
-    if (!lstatSync(link).isSymbolicLink()) return false;
-    return comparable(resolve(base, readlinkSync(link).replace(/^\\\\\?\\/, ""))) === comparable(join(IMPORTED_SKILLS_DIR, name));
-  } catch {
-    return false;
-  }
-}
-
-/** Moved aside before it is deleted: a bot can put something else under the name meanwhile, never make the moved entry
- * something else. */
-function removeLink(botId: string, link: string, name: string): void {
-  const aside = join(DATA_DIR, "skill-state", botId, "link-removal");
-  try {
-    mkdirSync(aside, { recursive: true, mode: 0o700 });
-  } catch {
-    return;
-  }
-  const moved = join(aside, randomUUID());
-  try {
-    renameSync(link, moved);
-  } catch {
-    return;
-  }
-  if (linksToImported(moved, name, dirname(link))) {
-    try {
-      unlinkSync(moved);
-      return;
-    } catch {}
-  }
-  try {
-    if (!entryExistsWithoutFollowing(link)) renameSync(moved, link);
-  } catch {}
-}
-
-/** Links `skills` into a task folder's native skill folders and removes the imported links it no longer wants. A name
- * the bot's own skill (or anything else) holds is left alone. */
-export function syncImportedSkillLinks(botId: string, folder: string, skills: readonly ImportedSkillView[]): void {
-  for (const relative of NATIVE_SKILL_DIRS) {
-    const dir = linkDirectory(folder, relative, skills.length > 0);
-    if (!dir) continue;
-    const wanted = new Map(skills.map((skill) => [skill.name, skill.folder]));
-    let names: string[] = [];
-    try {
-      names = readdirSync(dir).filter(isSkillName);
-    } catch {}
-    for (const name of names) {
-      const link = join(dir, name);
-      if (!linksToImported(link, name)) continue;
-      if (wanted.has(name)) wanted.delete(name);
-      else removeLink(botId, link, name);
-    }
-    for (const [name, target] of wanted) {
-      const link = join(dir, name);
-      if (entryExistsWithoutFollowing(link)) continue;
-      try {
-        symlinkSync(target, link, process.platform === "win32" ? "junction" : "dir");
-      } catch {}
-    }
-  }
-}
+export { syncImportedSkillLinks } from "./imported-skills-links.ts";

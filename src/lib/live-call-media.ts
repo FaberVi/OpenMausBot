@@ -1,92 +1,37 @@
 // Its data channel may only send session.close; everything else about the call runs on the harness.
 import { useSyncExternalStore } from "react";
-import type { LiveCallState, LiveEndReason } from "../../shared/wire";
-import { api, ApiError } from "@/state/store";
-import { openExternalLink } from "./app-links";
+import type { LiveCallState } from "../../shared/wire";
+import { ApiError } from "@/state/store";
 import { endCall, startCall } from "./call";
-import { desktopCapabilitiesNow } from "./desktop";
 import { t } from "./i18n";
+import { createDefaultLiveMediaDeps, LiveUnsupportedError } from "./live-call-media-defaults.ts";
+import {
+  applyCaption,
+  busyText,
+  endNotice,
+  HEARD_CLEAR_MS,
+  liveClient,
+  micBlocked,
+} from "./live-call-media-caption.ts";
+import { iceGathered } from "./live-call-media-ice.ts";
+import { handleLiveCallKey as handleLiveCallKeyInner } from "./live-call-media-keys.ts";
+import type { LiveMediaDeps, LiveMediaState } from "./live-call-media-types.ts";
+import { isLiveCallRunning } from "./live-call-media-types.ts";
 
-export type LiveMediaPhase = "idle" | "starting" | "live" | "ending" | "ended" | "failed";
-
-export type LiveCallAction = "retry" | "open-in-browser";
-
-export function isLiveCallRunning(phase: LiveMediaPhase): boolean {
-  return phase === "starting" || phase === "live" || phase === "ending";
-}
-
-export interface LiveMediaState {
-  phase: LiveMediaPhase;
-  callId: string | null;
-  botId: string | null;
-  threadId: string | null;
-  startedAt: number | null;
-  muted: boolean;
-  caption: string;
-  heard: string;
-  notice: string | null;
-  needsKey: boolean;
-  busyWith: LiveCallState | null;
-  action: LiveCallAction | null;
-  hangingUp: boolean;
-}
-
-export interface LiveMediaDeps {
-  getUserMedia(constraints: MediaStreamConstraints): Promise<MediaStream>;
-  createPeer(): RTCPeerConnection;
-  request<T>(path: string, init?: RequestInit & { timeoutMs?: number }): Promise<T>;
-  playRemote(track: MediaStreamTrack): Promise<void> | void;
-  stopRemote(): void;
-  iceTimeoutMs: number;
-  capabilities(): DesktopCapabilities;
-  pageMicrophone(): Promise<"allowed" | "refused" | undefined>;
-  openInBrowser(url: string): void;
-}
+export type { LiveCallAction, LiveMediaDeps, LiveMediaPhase, LiveMediaState } from "./live-call-media-types.ts";
+export { isLiveCallRunning } from "./live-call-media-types.ts";
+export { applyCaption, endNotice } from "./live-call-media-caption.ts";
+export { liveCallChord, liveCallShortcut, type LiveCallShortcut } from "./live-call-media-keys.ts";
 
 const IDLE: LiveMediaState = {
   phase: "idle", callId: null, botId: null, threadId: null, startedAt: null, muted: false,
   caption: "", heard: "", notice: null, needsKey: false, busyWith: null, action: null, hangingUp: false,
 };
-const CAPTION_CHARS = 240;
-const HEARD_CHARS = 160;
-const HEARD_CLEAR_MS = 2_500;
 const ENDED_NOTICE_MS = 4_000;
 const SERVER_CLOSE_GRACE_MS = 3_000;
 export const MEDIA_CONNECT_TIMEOUT_MS = 20_000;
 
-class LiveUnsupportedError extends Error {}
-
-let audio: HTMLAudioElement | null = null;
-const defaults: LiveMediaDeps = {
-  getUserMedia: (constraints) => {
-    if (!globalThis.navigator?.mediaDevices?.getUserMedia) return Promise.reject(new LiveUnsupportedError(t("call.live.unsupported")));
-    return navigator.mediaDevices.getUserMedia(constraints);
-  },
-  createPeer: () => {
-    if (typeof RTCPeerConnection === "undefined") throw new LiveUnsupportedError(t("call.live.unsupported"));
-    return new RTCPeerConnection();
-  },
-  request: (path, init) => api(path, init),
-  playRemote: async (track) => {
-    audio ??= Object.assign(document.createElement("audio"), { autoplay: true });
-    audio.srcObject = new MediaStream([track]);
-    await audio.play();
-  },
-  stopRemote: () => {
-    if (audio) audio.srcObject = null;
-  },
-  iceTimeoutMs: 10_000,
-  capabilities: desktopCapabilitiesNow,
-  pageMicrophone: async () => {
-    try {
-      return (await globalThis.window?.ogb?.permStatus?.())?.pageMic;
-    } catch {
-      return undefined;
-    }
-  },
-  openInBrowser: (url) => void openExternalLink(url).catch(() => undefined),
-};
-let deps: LiveMediaDeps = defaults;
+let deps: LiveMediaDeps = createDefaultLiveMediaDeps();
 
 let state: LiveMediaState = IDLE;
 let generation = 0;
@@ -124,54 +69,16 @@ export function useLiveMedia(): LiveMediaState {
 }
 
 export function configureLiveMedia(overrides: Partial<LiveMediaDeps>): void {
-  deps = { ...defaults, ...overrides };
+  deps = { ...createDefaultLiveMediaDeps(), ...overrides };
 }
 
 export function resetLiveMedia(): void {
   release();
   generation += 1;
-  deps = defaults;
+  deps = createDefaultLiveMediaDeps();
   state = IDLE;
   serverCall = null;
   serverAttached = false;
-}
-
-export function applyCaption(current: { caption: string; heard: string }, event: { type?: unknown; delta?: unknown }): { caption: string; heard: string } {
-  const delta = typeof event.delta === "string" ? event.delta : "";
-  if (event.type === "session.output_transcript.delta") return { caption: (current.caption + delta).slice(-CAPTION_CHARS), heard: "" };
-  if (event.type === "session.input_transcript.delta") return { caption: current.caption, heard: (current.heard + delta).slice(-HEARD_CHARS) };
-  return current;
-}
-
-export function endNotice(reason: LiveEndReason | undefined): { text: string; dropped: boolean } {
-  switch (reason) {
-    case "idle": return { text: t("call.live.endedIdle"), dropped: false };
-    case "expired": return { text: t("call.live.endedExpired"), dropped: false };
-    case "content": return { text: t("call.live.endedContent"), dropped: false };
-    case "deleted": return { text: t("call.live.endedDeleted"), dropped: false };
-    case "shutdown": return { text: t("call.live.endedShutdown"), dropped: false };
-    case "signed-out": return { text: t("call.live.endedSignedOut"), dropped: false };
-    case "remote-hangup":
-    case "connection-lost":
-    case "sideband-lost":
-    case "error": return { text: t("call.live.dropped"), dropped: true };
-    default: return { text: t("call.live.ended"), dropped: false };
-  }
-}
-
-function inWebBrowser(capabilities: DesktopCapabilities): boolean {
-  return capabilities.dictation.reasonCode === "desktop-app-required";
-}
-
-function micBlocked(capabilities: DesktopCapabilities, pageMic: "allowed" | "refused" | undefined): { notice: string; action: LiveCallAction } {
-  if (pageMic === "refused" || (pageMic === undefined && capabilities.dictation.reasonCode === "remote-server")) {
-    return { notice: t("call.live.micAppRefused"), action: "open-in-browser" };
-  }
-  return { notice: t(inWebBrowser(capabilities) ? "call.live.micBlockedBrowser" : "call.live.micBlocked"), action: "retry" };
-}
-
-function liveClient(capabilities: DesktopCapabilities): "desktop" | "web" {
-  return inWebBrowser(capabilities) ? "web" : "desktop";
 }
 
 export async function startLiveCall(target: { botId: string; threadId: string }): Promise<void> {
@@ -276,29 +183,13 @@ export function setLiveMuted(muted: boolean): void {
   set({ muted });
 }
 
-export type LiveCallShortcut = "mute" | "hangUp";
-
-type ChordEvent = Pick<KeyboardEvent, "key" | "metaKey" | "ctrlKey" | "shiftKey" | "altKey" | "isComposing" | "defaultPrevented">;
-
-export function liveCallShortcut(event: ChordEvent, isMac: boolean): LiveCallShortcut | null {
-  if (event.defaultPrevented || event.isComposing || event.altKey || !event.shiftKey) return null;
-  const modifier = isMac ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey;
-  if (!modifier) return null;
-  const key = event.key.toLowerCase();
-  return key === "m" ? "mute" : key === "h" ? "hangUp" : null;
-}
-
-export function liveCallChord(action: LiveCallShortcut, isMac: boolean): { text: string; aria: string } {
-  const letter = action === "mute" ? "M" : "H";
-  return isMac ? { text: `⌘⇧${letter}`, aria: `Meta+Shift+${letter}` } : { text: `Ctrl+Shift+${letter}`, aria: `Control+Shift+${letter}` };
-}
-
-export function handleLiveCallKey(event: ChordEvent, isMac: boolean): boolean {
-  const action = liveCallShortcut(event, isMac);
-  if (!action || !isLiveCallRunning(state.phase)) return false;
-  if (action === "mute") setLiveMuted(!state.muted);
-  else void hangUpLiveCall();
-  return true;
+export function handleLiveCallKey(event: Pick<KeyboardEvent, "key" | "metaKey" | "ctrlKey" | "shiftKey" | "altKey" | "isComposing" | "defaultPrevented">, isMac: boolean): boolean {
+  return handleLiveCallKeyInner(event, isMac, {
+    phase: state.phase,
+    muted: state.muted,
+    onMute: setLiveMuted,
+    onHangUp: () => { void hangUpLiveCall(); },
+  }, isLiveCallRunning);
 }
 
 export function dismissStartPrompt(botId: string): void {
@@ -477,24 +368,3 @@ function release() {
   if (state.botId) endCall(state.botId);
 }
 
-function busyText(call: LiveCallState): string {
-  return t(`call.live.busy.${call.client}`);
-}
-
-/** Non-trickle ICE: OpenAI takes one offer, so gathering past `timeoutMs` sends the candidates found so far. */
-function iceGathered(connection: RTCPeerConnection, timeoutMs: number): Promise<void> {
-  if (connection.iceGatheringState === "complete") return Promise.resolve();
-  return new Promise((resolve) => {
-    const timeout = setTimeout(() => {
-      connection.removeEventListener("icegatheringstatechange", onState);
-      resolve();
-    }, timeoutMs);
-    function onState() {
-      if (connection.iceGatheringState !== "complete") return;
-      clearTimeout(timeout);
-      connection.removeEventListener("icegatheringstatechange", onState);
-      resolve();
-    }
-    connection.addEventListener("icegatheringstatechange", onState);
-  });
-}
