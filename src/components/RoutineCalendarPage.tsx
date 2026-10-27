@@ -41,7 +41,7 @@ import { cronChoiceFor, cronDraftFor, cronEditorValue, isCronChoice, type CronCh
 import { routineRunLabel, routineRunsOn, routineRunTime, routineScheduleState } from "@/lib/routine-display";
 import { useAdvancedMode } from "@/lib/interface-mode";
 import { useShowThreads } from "@/lib/thread-preferences";
-import { activeLocale, t } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import type { CalendarCall, CalendarCallAttachment, CalendarCallInput } from "@/lib/calendar-calls";
 import { isDone } from "@/lib/automations";
@@ -604,8 +604,8 @@ export function EventEditor({
           );
   const whenControls = recurrence !== "interval" && recurrence !== "limit_reset" && !isCronChoice(recurrence) && (
                 <div className="flex flex-wrap items-center gap-2">
-                  {kind === "routine" && recurrence === "none" && <span className="text-[12px] font-medium text-ink-secondary">{t("routines.schedule.starts")}</span>}
-                  {kind === "routine" && recurrence === "weekly" && <span className="text-[12px] font-medium text-ink-secondary">{t("routines.schedule.on")}</span>}
+                  {kind === "routine" && recurrence === "none" && <span className="text-[12px] font-medium text-ink-secondary">Starts</span>}
+                  {kind === "routine" && recurrence === "weekly" && <span className="text-[12px] font-medium text-ink-secondary">On</span>}
                   {(kind === "call" || recurrence === "none" || recurrence === "weekly") && <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="rounded-lg border border-hairline/50 bg-inset px-3 py-2 text-[13px] text-ink outline-none focus:border-accent [color-scheme:dark]" />}
                   <input type="time" step={CALENDAR_SLOT_MINUTES * 60} value={startTime} onChange={(event) => setStartTime(event.target.value)} className="rounded-lg border border-hairline/50 bg-inset px-3 py-2 text-[13px] text-ink outline-none focus:border-accent [color-scheme:dark]" />
                   {kind === "call" && <>
@@ -620,14 +620,14 @@ export function EventEditor({
   const repeatSelect = (
               <div className="flex flex-wrap items-center gap-2">
                 <Repeat2 size={14} className="text-ink-secondary" />
-                <Select aria-label={t("routines.editor.repeat")} value={recurrence} onChange={(event) => selectRecurrence(event.target.value as RecurrenceChoice)}>
-                  <option value="none">{t("routines.repeat.doesNotRepeat")}</option>
-                  {kind === "routine" && <option value="interval">{t("routines.repeat.everyXMinutes")}</option>}
-                  <option value="daily">{t("routines.repeat.daily")}</option>
-                  <option value="weekdays">{t("routines.repeat.weekdaysLong")}</option>
-                  <option value="weekly">{t("routines.repeat.weeklyOn", { day: new Date(at).toLocaleDateString(activeLocale(), { weekday: "long" }) })}</option>
-                  <option value="custom">{t("routines.repeat.customWeekdays")}</option>
-                  {kind === "routine" && <><option value="monthly">{t("routines.repeat.monthly")}</option><option value="yearly">{t("routines.repeat.yearly")}</option><option value="cron">{t("routines.repeat.cron")}</option></>}
+                <Select aria-label="Repeat" value={recurrence} onChange={(event) => selectRecurrence(event.target.value as RecurrenceChoice)}>
+                  <option value="none">Does not repeat</option>
+                  {kind === "routine" && <option value="interval">Every X minutes</option>}
+                  <option value="daily">Daily</option>
+                  <option value="weekdays">Every weekday (Monday to Friday)</option>
+                  <option value="weekly">Weekly on {DAY_NAMES[new Date(at).getDay()]}</option>
+                  <option value="custom">Selected weekdays</option>
+                  {kind === "routine" && <><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="cron">Custom cron (advanced)</option></>}
                   {kind === "routine" && <option value="limit_reset">{t("routines.limitReset.option")}</option>}
                 </Select>
               </div>
@@ -645,14 +645,14 @@ export function EventEditor({
               {recurrence === "interval" && kind === "routine" && (
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2 text-[13px] text-ink">
-                    <span className="font-medium">{t("routines.interval.runsEvery")}</span>
+                    <span className="font-medium">Runs every</span>
                     <Select
                       value={INTERVAL_PRESETS.includes(intervalMinutes) ? String(intervalMinutes) : "custom"}
                       onChange={(event) => setIntervalMinutes(event.target.value === "custom" ? 0 : Number(event.target.value))}
                       aria-label={t("routines.interval.runsEvery")}
                     >
                       {INTERVAL_PRESETS.map((minutes) => <option key={minutes} value={minutes}>{minutes}</option>)}
-                      <option value="custom">{t("routines.interval.custom")}</option>
+                      <option value="custom">Custom…</option>
                     </Select>
                     {!INTERVAL_PRESETS.includes(intervalMinutes) && (
                       <input
@@ -669,12 +669,12 @@ export function EventEditor({
                         className={cn("w-20 rounded-lg border bg-inset px-3 py-2 text-[13px] tabular-nums text-ink outline-none focus:border-accent", intervalInvalid ? "border-danger/70" : "border-hairline/50")}
                       />
                     )}
-                    <span>{t("routines.interval.minutes")}</span>
+                    <span>minutes</span>
                   </div>
 
                   <div className="grid items-center gap-2 text-[13px] text-ink sm:flex sm:flex-wrap">
                     <span className="inline-flex items-center gap-2 whitespace-nowrap">
-                      <span className="font-medium">{t("routines.schedule.on")}</span>
+                      <span className="font-medium">On</span>
                       <Select
                         value={intervalDays}
                         onChange={(event) => selectIntervalDays(event.target.value as IntervalDayChoice)}
@@ -682,14 +682,14 @@ export function EventEditor({
                         aria-invalid={intervalDaysInvalid}
                         aria-describedby={intervalDaysInvalid ? "routine-interval-days-error" : undefined}
                       >
-                        <option value="every-day">{t("routines.interval.everyDay")}</option>
-                        <option value="weekdays">{t("routines.interval.weekdays")}</option>
-                        <option value="custom">{t("routines.interval.custom")}</option>
+                        <option value="every-day">Every day</option>
+                        <option value="weekdays">Weekdays</option>
+                        <option value="custom">Custom…</option>
                       </Select>
                     </span>
                     <span aria-hidden="true" className="hidden text-ink-secondary sm:inline">·</span>
                     <span className="inline-flex items-center gap-2 whitespace-nowrap">
-                      <span className="font-medium">{t("routines.interval.during")}</span>
+                      <span className="font-medium">During</span>
                       <Select
                         value={intervalWindow}
                         onChange={(event) => setIntervalWindow(event.target.value as IntervalWindowChoice)}
@@ -697,13 +697,13 @@ export function EventEditor({
                         aria-invalid={intervalWindowInvalid}
                         aria-describedby={intervalWindowInvalid ? "routine-interval-window-error" : undefined}
                       >
-                        <option value="all-day">{t("routines.interval.allDay")}</option>
-                        <option value="custom">{t("routines.interval.customHours")}</option>
+                        <option value="all-day">All day</option>
+                        <option value="custom">Custom hours…</option>
                       </Select>
                     </span>
                     <span aria-hidden="true" className="hidden text-ink-secondary sm:inline">·</span>
                     <span className="inline-flex items-center gap-2 whitespace-nowrap">
-                      <span className="font-medium">{t("routines.interval.ends")}</span>
+                      <span className="font-medium">Ends</span>
                       <Select
                         value={intervalEnd}
                         onChange={(event) => setIntervalEnd(event.target.value as IntervalEndChoice)}
@@ -711,18 +711,18 @@ export function EventEditor({
                         aria-invalid={intervalEndInvalid}
                         aria-describedby={intervalEndInvalid ? "routine-interval-end-error" : undefined}
                       >
-                        <option value="never">{t("routines.interval.never")}</option>
-                        <option value="on-date">{t("routines.interval.onDate")}</option>
+                        <option value="never">Never</option>
+                        <option value="on-date">On a date…</option>
                       </Select>
                     </span>
                   </div>
 
                   {intervalDays === "custom" && (
                     <div>
-                      <div className="mb-2 text-[11px] font-medium text-ink-secondary">{t("routines.interval.chooseDays")}</div>
+                      <div className="mb-2 text-[11px] font-medium text-ink-secondary">Choose the days</div>
                       <div
                         role="group"
-                        aria-label={t("routines.interval.chooseDays")}
+                        aria-label="Custom interval days"
                         aria-invalid={intervalDaysInvalid}
                         aria-describedby={intervalDaysInvalid ? "routine-interval-days-error" : undefined}
                         className="flex flex-wrap gap-1.5"
@@ -747,31 +747,31 @@ export function EventEditor({
 
                   {intervalWindow === "custom" && (
                     <div className="flex flex-wrap items-center gap-2 text-[12px] text-ink">
-                      <span className="font-medium text-ink-secondary">{t("routines.interval.runBetween")}</span>
+                      <span className="font-medium text-ink-secondary">Run between</span>
                       <input aria-label="Interval window start" aria-invalid={intervalWindowInvalid} aria-describedby={intervalWindowInvalid ? "routine-interval-window-error" : undefined} type="time" step={CALENDAR_SLOT_MINUTES * 60} value={intervalWindowStart} onChange={(event) => setIntervalWindowStart(event.target.value)} className={cn("rounded-lg border bg-inset px-3 py-2 text-[13px] text-ink outline-none focus:border-accent [color-scheme:dark]", intervalWindowInvalid ? "border-danger/70" : "border-hairline/50")} />
-                      <span className="text-ink-secondary">{t("routines.interval.and")}</span>
+                      <span className="text-ink-secondary">and</span>
                       <input aria-label="Interval window end" aria-invalid={intervalWindowInvalid} aria-describedby={intervalWindowInvalid ? "routine-interval-window-error" : undefined} type="time" step={CALENDAR_SLOT_MINUTES * 60} value={intervalWindowEnd} onChange={(event) => setIntervalWindowEnd(event.target.value)} className={cn("rounded-lg border bg-inset px-3 py-2 text-[13px] text-ink outline-none focus:border-accent [color-scheme:dark]", intervalWindowInvalid ? "border-danger/70" : "border-hairline/50")} />
                     </div>
                   )}
 
                   {intervalEnd === "on-date" && (
                     <label className="flex flex-wrap items-center gap-2 text-[12px] text-ink">
-                      <span className="font-medium text-ink-secondary">{t("routines.interval.stopAfter")}</span>
+                      <span className="font-medium text-ink-secondary">Stop scheduling after</span>
                       <input aria-label="Interval end date" aria-invalid={intervalEndInvalid} aria-describedby={intervalEndInvalid ? "routine-interval-end-error" : undefined} type="date" min={toLocalDateInput(intervalEndMinimumAt)} value={intervalEndDate} onChange={(event) => setIntervalEndDate(event.target.value)} className={cn("rounded-lg border bg-inset px-3 py-2 text-[13px] text-ink outline-none focus:border-accent [color-scheme:dark]", intervalEndInvalid ? "border-danger/70" : "border-hairline/50")} />
                     </label>
                   )}
 
                   {intervalInvalid && (
-                    <div id="routine-interval-error" className="text-[11px] text-danger">{t("routines.interval.errorMinutes")}</div>
+                    <div id="routine-interval-error" className="text-[11px] text-danger">Choose a whole number from 5 to 1,440 minutes.</div>
                   )}
                   {intervalDaysInvalid && (
-                    <div id="routine-interval-days-error" className="text-[11px] text-danger">{t("routines.interval.errorDays")}</div>
+                    <div id="routine-interval-days-error" className="text-[11px] text-danger">Choose at least one day.</div>
                   )}
                   {intervalWindowInvalid && (
-                    <div id="routine-interval-window-error" className="text-[11px] text-danger">{t("routines.interval.errorWindow", { minutes: intervalMinutes || 5 })}</div>
+                    <div id="routine-interval-window-error" className="text-[11px] text-danger">Choose a same-day window at least {intervalMinutes || 5} minutes long.</div>
                   )}
                   {intervalEndInvalid && (
-                    <div id="routine-interval-end-error" className="text-[11px] text-danger">{t("routines.interval.errorEndDate")}</div>
+                    <div id="routine-interval-end-error" className="text-[11px] text-danger">Choose an end date after the first run.</div>
                   )}
                   <div id="routine-interval-help" className="text-[11px] leading-relaxed text-ink-secondary">{t(overlap === "queue" ? "routines.overlapQueueHelp" : "routines.overlapSkipHelp")}</div>
                 </div>
@@ -781,21 +781,17 @@ export function EventEditor({
   const runLimitControls = kind === "routine" && (
                 <details className="rounded-xl border border-hairline/40 bg-inset/40 px-3 py-2.5">
                   <summary className="cursor-pointer select-none text-[12px] font-medium text-ink-secondary hover:text-ink">
-                    {t("routines.advanced.summary", {
-                      detail: timeoutMinutes == null
-                        ? t("routines.advanced.noRunLimit")
-                        : t("routines.advanced.runLimit", { duration: durationLabel(timeoutMinutes) }),
-                    })}
+                    Advanced · {timeoutMinutes == null ? "no run limit" : `${durationLabel(timeoutMinutes)} run limit`}
                   </summary>
                   <div className="mt-3 border-t border-hairline/35 pt-3">
                     <label className="flex flex-wrap items-center gap-2 text-[12px] text-ink">
-                      <span>{t("routines.advanced.stopAfter")}</span>
+                      <span>Stop if still running after</span>
                       <Select aria-label="Routine safety limit" value={timeoutMinutes ?? ""} onChange={(event) => setTimeoutMinutes(event.target.value ? Number(event.target.value) : null)}>
-                        <option value="">{t("routines.advanced.noLimit")}</option>
+                        <option value="">No limit</option>
                         {EVENT_DURATION_OPTIONS.map((minutes) => <option key={minutes} value={minutes}>{durationLabel(minutes)}</option>)}
                       </Select>
                     </label>
-                    <div className="mt-1.5 text-[11px] leading-relaxed text-ink-secondary">{t("routines.advanced.timeoutHelp")}</div>
+                    <div className="mt-1.5 text-[11px] leading-relaxed text-ink-secondary">Optional. The clock starts when work actually begins and does not control how often the routine starts.</div>
                     {recurrence !== "none" && <div className="mt-3">
                       <label className="flex flex-wrap items-center gap-2 text-[12px] text-ink">
                         <span>{t("routines.overlapLabel")}</span>
@@ -833,19 +829,19 @@ export function EventEditor({
             <Paperclip size={18} className="mt-2.5 shrink-0 text-ink-secondary" />
             {isRoomGoal ? (
               <div className="min-w-0 flex-1 rounded-xl border border-hairline/50 bg-inset px-3.5 py-3">
-                <div className="text-[13px] font-medium text-ink">{t("routines.attachments.sharedContextTitle")}</div>
+                <div className="text-[13px] font-medium text-ink">Use the group’s shared context</div>
                 <div className="mt-1 text-[11px] leading-relaxed text-ink-secondary">{t("routines.editor.teamGoalAttachments")}</div>
               </div>
             ) : <div className="min-w-0 flex-1 space-y-2">
               <input ref={fileInput} type="file" multiple className="hidden" onChange={(event) => { void pickFiles(event.target.files); event.target.value = ""; }} />
-              <button type="button" onClick={() => fileInput.current?.click()} className="rounded-lg border border-hairline/50 px-3 py-2 text-[13px] font-medium text-ink hover:bg-raised">{t("routines.attachments.add")}</button>
+              <button type="button" onClick={() => fileInput.current?.click()} className="rounded-lg border border-hairline/50 px-3 py-2 text-[13px] font-medium text-ink hover:bg-raised">Add attachment</button>
               <AttachmentChips attachments={attachments} onRemove={(id) => setAttachments((current) => current.filter((attachment) => attachment.id !== id))} />
               <div className="text-[11px] leading-relaxed text-ink-secondary">
                 {kind === "routine"
-                  ? t("routines.attachments.localHelp")
+                  ? "Attachments are passed to each local routine run and excluded from shared team files."
                   : selectedBots.length > 1
-                    ? t("routines.attachments.callMulti")
-                    : t("routines.attachments.callSingle")}
+                    ? "References will be shared in the group when the event starts."
+                    : "References stay with the event and are available when you join the group."}
               </div>
               {attachmentNotice && <div className="text-[12px] text-warning">{attachmentNotice}</div>}
             </div>}
@@ -857,11 +853,11 @@ export function EventEditor({
               <div className="min-w-0 flex-1">
                 {isRoomGoal ? (
                   <div className="rounded-xl border border-accent/35 bg-accent/[0.07] p-3">
-                    <div className="text-[13px] font-medium text-ink">{cloudHome ? t("routines.runsOn.goalCloud") : t("routines.runsOn.goalLocal")}</div>
-                    <div className="mt-1 text-[11px] leading-relaxed text-ink-secondary">{t("routines.runsOn.goalCoordination")}</div>
+                    <div className="text-[13px] font-medium text-ink">{cloudHome ? "Runs on My Cloud" : "Runs on this computer"}</div>
+                    <div className="mt-1 text-[11px] leading-relaxed text-ink-secondary">OpenMausBot keeps the group and its member hand-offs together for the full goal.</div>
                   </div>
                 ) : <div className="grid grid-cols-2 gap-2">
-                  <button type="button" onClick={() => setRunOn("maus")} className={cn("rounded-xl border p-3 text-left", runOn === "maus" ? "border-accent/60 bg-accent/10" : "border-hairline/50 bg-inset hover:bg-raised")}><div className="text-[13px] font-medium text-ink">{t("routines.runsOn.currentSetup")}</div><div className="mt-1 text-[11px] text-ink-secondary">{t("routines.runsOn.currentSetupHint")}</div></button>
+                  <button type="button" onClick={() => setRunOn("maus")} className={cn("rounded-xl border p-3 text-left", runOn === "maus" ? "border-accent/60 bg-accent/10" : "border-hairline/50 bg-inset hover:bg-raised")}><div className="text-[13px] font-medium text-ink">Bot’s current setup</div><div className="mt-1 text-[11px] text-ink-secondary">Keeps its model and configured computer, including a self-hosted VPS.</div></button>
                   <button type="button" disabled={!cloudReady || attachments.length > 0} onClick={() => setRunOn("cloud")} className={cn("rounded-xl border p-3 text-left disabled:cursor-not-allowed disabled:opacity-45", runOn === "cloud" ? "border-accent/60 bg-accent/10" : "border-hairline/50 bg-inset hover:bg-raised")}><div className="text-[13px] font-medium text-ink">{t("routines.runsOn.boat")}</div><div className="mt-1 text-[11px] text-ink-secondary">{t(cloudHome ? "routines.runsOn.boatHintCloudHome" : "routines.runsOn.boatHint")}</div></button>
                 </div>}
               </div>
@@ -1019,7 +1015,7 @@ export function EventEditor({
 
 
         <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t border-hairline/40 bg-panel/95 px-5 py-3.5 backdrop-blur">
-          <button onClick={onClose} className="rounded-lg px-4 py-2 text-[13px] text-ink-secondary hover:bg-raised hover:text-ink">{t("common.cancel")}</button>
+          <button onClick={onClose} className="rounded-lg px-4 py-2 text-[13px] text-ink-secondary hover:bg-raised hover:text-ink">Cancel</button>
           <button onClick={save} disabled={saving || attachmentPending || !valid} className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2 text-[13px] font-semibold text-white hover:brightness-110 disabled:opacity-40">{(saving || attachmentPending) && <Loader2 size={14} className="animate-spin" />}{attachmentPending ? "Attaching…" : existingRoutine || existingCall || (kind === "routine" && !isRoomGoal) ? t("automations.editor.app.save") : kind === "call" ? "Schedule call" : "Schedule team goal"}</button>
         </div>
       </div>

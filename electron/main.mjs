@@ -926,8 +926,8 @@ function cloudMenuSublabels() {
   return entry && line ? { [entry.id]: line } : {};
 }
 const cloudColorDot = colorDotIcons(nativeImage);
-function cloudMenuOptions(source = "app_menu") {
-  return { sublabels: cloudMenuSublabels(), iconFor: cloudColorDot, ...(cloudOffersAllowed() ? { onAddCloud: () => void workspaceMenuAction(() => openCloudAdd(source)) } : {}) };
+function cloudMenuOptions(source = "app_menu", labels) {
+  return { sublabels: cloudMenuSublabels(), iconFor: cloudColorDot, ...(labels ? { labels } : {}), ...(cloudOffersAllowed() ? { onAddCloud: () => void workspaceMenuAction(() => openCloudAdd(source)) } : {}) };
 }
 let cloudMenuKey = "";
 function refreshCloudMenus() {
@@ -2822,16 +2822,13 @@ let workspaceMenuOpen = false;
 ipcMain.handle("workspaces:menu", workspaceOnly(async (_event, options) => {
   if (workspaceMenuOpen || homeAlone()) return;
   workspaceMenuOpen = true;
-  const from = options === "howto" ? "howto" : options?.from;
-  const labels = options && typeof options === "object" ? options.labels : undefined;
   try {
     await cloudOffersReady();
     const menu = Menu.buildFromTemplate(workspaceMenuTemplate(environmentsState, {
       onSwitch: (id) => void workspaceMenuAction(() => switchEnvironment(id)),
       onConnect: () => void workspaceMenuAction(openWorkspaceSettings),
       onForget: (id) => void workspaceMenuAction(() => forgetEnvironment(id)),
-      ...(labels ? { labels } : {}),
-      ...cloudMenuOptions(from === "howto" ? "app_howto" : "app_menu"),
+      ...cloudMenuOptions((options === "howto" ? "howto" : options?.from) === "howto" ? "app_howto" : "app_menu", typeof options === "object" ? options.labels : undefined),
       ...(await placesMenuOptions({ homeOrigin: homeWindow.cloudOrigin(), cloud: cloudHomeEntry(), home: oneHome.away(), platform: process.platform, port: SERVER_PORT })),
     }));
     await new Promise((resolve) => menu.popup({ window: mainWindow, callback: resolve }));
