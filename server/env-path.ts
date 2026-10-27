@@ -323,6 +323,10 @@ function parseCmdShim(shim: string, env?: NodeJS.ProcessEnv): ResolvedSpawn | nu
   }
   const exe = targets.find((p) => extname(p).toLowerCase() === ".exe");
   if (exe) return { command: exe, args: [] };
+  for (const target of targets) {
+    const viaNode = parseNodeShebang(target, env);
+    if (viaNode) return viaNode;
+  }
   return parsePowerShellFileShim(shim, text, env);
 }
 
