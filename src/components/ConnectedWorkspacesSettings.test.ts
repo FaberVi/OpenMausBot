@@ -29,7 +29,7 @@ function render() {
 }
 const flush = async () => { for (let i = 0; i < 20; i++) await Promise.resolve(); };
 
-const VPS = { id: "vps", name: "VPS", origin: "https://bots.example.test", kind: "remote" as const };
+const VPS = { id: "vps", name: "VPS", origin: "https://bots.example.test" };
 function stub(extra: Record<string, unknown> = {}) {
   vi.stubGlobal("window", {
     ogb: { environments: { state: vi.fn().mockResolvedValue({ localOrigin: "http://127.0.0.1:1", remote: false, activeId: "local", environments: [VPS] }),
@@ -37,12 +37,7 @@ function stub(extra: Record<string, unknown> = {}) {
     location: { search: "", href: "http://127.0.0.1:1/settings" }, history: { replaceState: () => {} },
   });
 }
-async function mount() {
-  render();
-  for (const effect of f.effects) effect();
-  await flush();
-  render();
-}
+async function mount() { render(); for (const effect of f.effects) effect(); await flush(); }
 beforeEach(() => {
   f.values = []; f.index = 0; f.effects = [];
   stub(); setLocale("en");
@@ -65,15 +60,6 @@ const rowButton = (ariaLabel: string) => render().nodes.filter(n => n.type === "
 const textButton = (label: string) => render().nodes.filter(n => n.type === "button" && Children.toArray(n.props.children).join("") === label)[0];
 const forms = () => render().nodes.filter(n => n.type === "form");
 const envFormFields = () => nodes(forms()[0]!.props.children).filter(n => n.type === "input");
-
-it("renders in Italian when that locale is active", async () => {
-  setLocale("it");
-  await stubEnvironments(); await mount();
-  const { html } = render();
-  expect(html).toContain("Ambienti su questo computer");
-  expect(html).toContain("I tuoi server");
-  expect(html).toContain("Collegati a un server");
-});
 
 it("lists local environments with their folders above the servers, marking a missing one", async () => {
   await stubEnvironments(); await mount();

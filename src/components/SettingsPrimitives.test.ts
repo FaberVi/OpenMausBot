@@ -18,19 +18,6 @@ describe("settings primitives", () => {
     expect(html).not.toContain("bg-card");
   });
 
-  it("collapses card content while keeping the title visible", () => {
-    const html = renderToStaticMarkup(createElement(Card, {
-      title: "Servers",
-      subtitle: "Saved here.",
-      collapsible: true,
-      defaultOpen: false,
-      children: createElement("p", null, "Hidden body"),
-    }));
-    expect(html).toContain('aria-expanded="false"');
-    expect(html).toContain("Servers");
-    expect(html).not.toContain("Hidden body");
-  });
-
   it("keeps the form card surface and native switch semantics", () => {
     const html = renderToStaticMarkup(createElement(Card, {
       title: "Profile",

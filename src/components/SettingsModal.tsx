@@ -12,7 +12,7 @@ import { UpdatesConsentRow } from "./UpdatesConsent";
 import { OpenAtLoginRow } from "./OpenAtLoginRow";
 import { DefaultBotSidebarRow } from "./DefaultBotControls";
 import { DiagnosticsRow } from "./DiagnosticsRow";
-import { OtherOpenAiCompatServers, LmStudioServer } from "./OpenAiCompatServers";
+import { LmStudioServer, OtherOpenAiCompatServers } from "./OpenAiCompatServers";
 import { DecisionModelSettings } from "./DecisionModelSettings";
 import { useUpdaterState } from "@/lib/updater";
 import { brand } from "../lib/brand";
@@ -684,11 +684,11 @@ export function SettingsModal() {
             <UpdatesConsentRow />
             <DefaultBotSettings />
 
-            <Card collapsible defaultOpen={false} title={t("settings.roomTurns.title")} subtitle={t("settings.roomTurns.subtitle")}>
+            <Card title={t("settings.roomTurns.title")} subtitle={t("settings.roomTurns.subtitle")}>
               <RoomTurnTimeoutSettings />
             </Card>
 
-            <Card collapsible defaultOpen={false} title={t("settings.mcpCalls.title")} subtitle={t("settings.mcpCalls.subtitle")}>
+            <Card title={t("settings.mcpCalls.title")} subtitle={t("settings.mcpCalls.subtitle")}>
               <McpCallTimeoutSettings />
             </Card>
             <ThreadConcurrencySettings />

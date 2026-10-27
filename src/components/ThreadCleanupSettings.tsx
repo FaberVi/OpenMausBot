@@ -141,7 +141,7 @@ export function ThreadCleanupSettings() {
   };
 
   return (
-    <Card collapsible defaultOpen={false} title={t("settings.threadCleanup.title")} subtitle={t("settings.threadCleanup.subtitle")}>
+    <Card title={t("settings.threadCleanup.title")} subtitle={t("settings.threadCleanup.subtitle")}>
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <input

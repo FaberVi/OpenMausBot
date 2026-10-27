@@ -27,7 +27,7 @@ export function BotPanel({ bot, derived, headerClassName, linkedSection, onClose
   linkedSection: BotSettingsSection | null;
   onClose: () => void;
 }) {
-  const { dragProps, noDragStyle, controlsShiftStyle, windowsCaption } = useCaptionChrome();
+  const { dragProps } = useCaptionChrome();
   const link = usePanelLink();
   const [tab, setTab] = useState<PanelTab>(() => initialTarget(linkedSection, link).tab);
   const [stack, setStack] = useState<SimplePageId[]>(() => {
@@ -96,20 +96,11 @@ export function BotPanel({ bot, derived, headerClassName, linkedSection, onClose
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" onKeyDown={onKeyDown}>
-      <div
-        {...dragProps}
-        className={cn(
-          "flex shrink-0 items-center justify-end px-3.5 pb-2.5",
-          headerClassName ?? "pt-2",
-          windowsCaption && "pr-[132px]",
-        )}
-      >
-        <div className="flex items-center gap-3" style={{ ...noDragStyle, ...controlsShiftStyle }}>
-          <ChatMoreMenu bot={bot} />
-          <button type="button" onClick={onClose} aria-label={t("botSettings.simple.close")} className={roundButtonCls} style={noDragStyle}>
-            <X size={16} className="pointer-events-none" />
-          </button>
-        </div>
+      <div {...dragProps} className={cn("flex h-[52px] shrink-0 items-center justify-end gap-2 px-3.5", headerClassName)}>
+        <ChatMoreMenu bot={bot} />
+        <button type="button" onClick={onClose} aria-label={t("botSettings.simple.close")} className={roundButtonCls}>
+          <X size={16} className="pointer-events-none" />
+        </button>
       </div>
 
       <div ref={bodyRef} className="@container relative min-h-0 flex-1 overflow-y-auto px-5 pb-7">

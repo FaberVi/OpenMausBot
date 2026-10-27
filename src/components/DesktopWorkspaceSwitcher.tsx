@@ -4,24 +4,11 @@ import { cn } from "@/lib/cn";
 import type { CloudPlanSnapshot } from "../../electron/cloud-account.mjs";
 import { cloudColor } from "@/lib/cloud-look";
 import { t } from "@/lib/i18n";
-export function workspaceMenuLabels() {
-  return {
-    local: t("place.local"),
-    addCloud: t("workspace.menu.addCloud"),
-    addCloudSublabel: t("workspace.menu.addCloudSublabel"),
-    connect: t("workspace.menu.connect"),
-    forget: t("workspace.menu.forget", { name: "{name}" }),
-  };
-}
 import { CloudTile } from "./cloud-buy/parts";
 import { SIMPLE_RAIL_BUTTON } from "./SidebarSimpleTop";
 
-export function openServerMenu(
-  bridge: { menu: (options?: { from?: "howto"; labels?: ReturnType<typeof workspaceMenuLabels> }) => Promise<void> },
-  { howTo = false, onClosed, labels }: { howTo?: boolean; onClosed?: () => void; labels?: ReturnType<typeof workspaceMenuLabels> } = {},
-): Promise<void> {
-  const menuLabels = labels ?? workspaceMenuLabels();
-  return bridge.menu({ ...(howTo ? { from: "howto" } : {}), labels: menuLabels }).finally(() => { if (howTo) onClosed?.(); });
+export function openServerMenu(bridge: { menu: (options?: { from?: "howto" }) => Promise<void> }, { howTo = false, onClosed }: { howTo?: boolean; onClosed?: () => void } = {}): Promise<void> {
+  return bridge.menu(howTo ? { from: "howto" } : undefined).finally(() => { if (howTo) onClosed?.(); });
 }
 
 function PowerLine({ text }: { text: string }) {
@@ -60,7 +47,7 @@ export function DesktopWorkspaceSwitcher({ compact = false, inline = false, pill
   compact?: boolean; inline?: boolean; pill?: boolean; rail?: boolean; cloudHome?: boolean; owner?: string | null; howTo?: boolean; onMenuClosed?: () => void;
 }) {
   const bridge = window.ogb?.workspaces;
-  const [current, setCurrent] = useState<{ local: boolean; name: string; defaultLocal?: boolean; origin?: string; color?: string; home?: boolean } | null>(null);
+  const [current, setCurrent] = useState<{ local: boolean; name: string; origin?: string; color?: string; home?: boolean } | null>(null);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => {
@@ -94,7 +81,7 @@ export function DesktopWorkspaceSwitcher({ compact = false, inline = false, pill
       </div>
     </div>;
   }
-  const name = current?.defaultLocal ? t("place.local") : (current?.name ?? (cloudHome ? t("cloudSetup.myCloud") : t("sidebar.servers")));
+  const name = current?.name ?? (cloudHome ? t("cloudSetup.myCloud") : t("sidebar.servers"));
   const Icon = current?.local === false || (cloudHome && !current) ? Cloud : Laptop;
   const shown = cloudHome ? withPower(name) : name;
   const title = current?.origin ? `${shown} · ${current.origin}` : shown;
@@ -118,8 +105,8 @@ export function DesktopWorkspaceSwitcher({ compact = false, inline = false, pill
     <button type="button" aria-label={label} aria-haspopup="menu" aria-expanded={open} data-cloud-home-indicator={cloudHome || undefined}
       data-tour="server-switcher" title={title} onClick={openMenu}
       className={pill
-        ? "flex h-8 min-w-0 max-w-full items-center gap-1 overflow-hidden rounded-full bg-raised/50 pl-2.5 pr-1.5 text-left text-[13px] font-medium text-ink hover:bg-raised aria-expanded:bg-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-        : "flex h-7 min-w-0 max-w-full items-center gap-1.5 overflow-hidden rounded-md px-1.5 text-left text-[13px] font-medium text-ink hover:bg-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"}
+        ? "flex h-8 min-w-0 max-w-full items-center gap-1 overflow-hidden rounded-full bg-raised/50 pl-2.5 pr-1.5 text-left text-[13px] font-medium text-ink hover:bg-raised aria-expanded:bg-raised focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        : "flex h-7 min-w-0 max-w-full items-center gap-1.5 overflow-hidden rounded-md px-1.5 text-left text-[13px] font-medium text-ink hover:bg-control focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"}
       style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>
       {cloudColor(current?.color) ? <CloudTile color={current?.color} size={16} /> : <Icon size={pill ? 15 : 14} aria-hidden="true" data-switcher-icon className={pill ? "hidden shrink-0 text-ink-secondary @max-[124px]/sidebar-top:block" : "shrink-0 text-ink-secondary"} />}
       <span className={pill ? "min-w-0 truncate @max-[124px]/sidebar-top:hidden" : "min-w-0 truncate @max-[96px]/sidebar-top:hidden"}>{name}</span>
@@ -132,7 +119,7 @@ export function DesktopWorkspaceSwitcher({ compact = false, inline = false, pill
     <button type="button" aria-label={label} aria-haspopup="menu" aria-expanded={open} data-cloud-home-indicator={cloudHome || undefined}
       data-tour="server-switcher" title={title}
       onClick={openMenu}
-      className={cn("flex w-full items-center gap-2 rounded-lg py-2 text-left text-[13px] font-medium text-ink hover:bg-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus", compact ? "justify-center px-1" : "px-2")}
+      className={cn("flex w-full items-center gap-2 rounded-lg py-2 text-left text-[13px] font-medium text-ink hover:bg-control focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus", compact ? "justify-center px-1" : "px-2")}
       style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>
       {cloudColor(current?.color) ? <CloudTile color={current?.color} size={20} /> : <Icon size={16} className="shrink-0 text-ink-secondary" />}
       {!compact && <><span className="min-w-0 flex-1 truncate">{name}{cloudHome && onLine && <PowerLine text={onLine} />}</span><ChevronDown size={13} className="shrink-0 text-ink-secondary" /></>}
