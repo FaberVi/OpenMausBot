@@ -29,8 +29,7 @@ third_party/opencode/LICENSE text eol=lf
 # the next. A CRLF checkout on Windows ends those lines in "\r", so nothing
 # joins and every layering, healthcheck and trust check fails for a reason
 # that has nothing to do with the image. Docker itself reads LF everywhere.
-deploy/Dockerfile text eol=lf
-deploy/local/Dockerfile text eol=lf
+**/Dockerfile text eol=lf
 # Compose files are parsed in CI and in scripts/docker-image.test.ts; keep LF.
 compose.yaml text eol=lf
 deploy/local/compose.yaml text eol=lf
@@ -46,3 +45,6 @@ shared/app-frame/app-host.html text eol=lf
 
 # Imported by a vitest test: a CRLF checkout of its first lines broke the import on Windows.
 scripts/tighten-ratchets.mjs text eol=lf
+
+# Keep this catalog on LF so Windows checkouts do not rewrite the rules themselves.
+.gitattributes text eol=lf
