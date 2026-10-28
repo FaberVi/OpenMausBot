@@ -91,7 +91,7 @@ describe("sidebar bot row", () => {
 
   // Comfortable and compact put the mark at the end of the row's text, clear of the avatar's status dots;
   // icons-only has no row text, so the badge stays on the avatar.
-  it.each<[SidebarDensity, string]>([["comfortable", "ml-auto"], ["compact", "ml-auto"], ["icons", "absolute -bottom-0.5 -left-0.5"]])(
+  it.each<[SidebarDensity, string]>([["comfortable", "shrink-0"], ["compact", "shrink-0"], ["icons", "absolute -bottom-0.5 -left-0.5"]])(
     "shows the model once in a %s row", (density, placement) => {
       const found = badges(render(bot("claude", "opus"), density));
       expect(found).toHaveLength(1);

@@ -43,7 +43,8 @@ import { openPlaceAction, placeRowViewFor, usePlaceSeat, worksOnSimpleLabel } fr
 import type { PlaceRow } from "../../shared/place-view";
 import { trialCreditKind, type TrialCreditRefusal } from "../../shared/trial-credit";
 import { TrialCreditNotice } from "./TrialCreditNotice";
-import { isPureLeakedSystemHarnessMessage, stripLeakedSystemHarnessMessages } from "../../shared/system-message-guard.ts";
+import { displayBotMessageText } from "@/lib/bot-message-text";
+import { isPureLeakedSystemHarnessMessage } from "../../shared/system-message-guard.ts";
 import { ConversationalReply, QuickModelNote, isConversational, useReplySegments, useThreadOpenedAt } from "./ConversationalReply";
 import type { LocaleKey } from "@/locales";
 import { isProviderSafetyBlock, PROVIDER_SAFETY_GUIDANCE, PROVIDER_SAFETY_HELP_URL } from "../../shared/provider-safety";
@@ -365,7 +366,7 @@ const Bubble = memo(function Bubble({
   const speech = useSpeech();
   const speaking = speech.messageId === message.id && speech.status !== "idle";
   const rawText = peer ? peer.body : (message.text ?? "");
-  const text = user ? rawText : stripLeakedSystemHarnessMessages(rawText);
+  const text = user ? rawText : displayBotMessageText(rawText);
   const botMenu = useBotMessageMenu({
     text,
     botId,

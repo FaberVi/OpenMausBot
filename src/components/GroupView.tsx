@@ -51,7 +51,8 @@ import { Composer } from "./Composer";
 import { ChatErrorBanner, ChatNotice } from "./ChatErrorBanner";
 import { RoomContextWarnings } from "./ContextWarning";
 import { ChatFindBar } from "./ChatFindBar";
-import { isPureLeakedSystemHarnessMessage, stripLeakedSystemHarnessMessages } from "../../shared/system-message-guard.ts";
+import { displayBotMessageText } from "@/lib/bot-message-text";
+import { isPureLeakedSystemHarnessMessage } from "../../shared/system-message-guard.ts";
 import { ReplyQuote } from "./ReplyQuote";
 import { ConnectorCard } from "./ConnectorCard";
 import { SecretRequestCard } from "./SecretRequestCard";
@@ -160,7 +161,7 @@ function RoomTextMessage({
   const user = m.role === "user";
   const reactor = useReactor();
   const speaker = otherSpeaker(m, state.config?.team && reactor !== "user" ? reactor : null);
-  const rawText = user ? (m.text ?? "") : stripLeakedSystemHarnessMessages(m.text ?? "");
+  const rawText = user ? (m.text ?? "") : displayBotMessageText(m.text ?? "");
   const cited = user && m.text ? splitTranscriptCitations(m.text) : null;
   const attachments = user && m.text ? splitTranscriptAttachments(cited?.display ?? m.text) : null;
   const display = attachments?.display ?? rawText;

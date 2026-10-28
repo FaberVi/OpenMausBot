@@ -4,6 +4,8 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Bot, InstanceInfo } from "@/state/store";
+import { setLocale } from "@/lib/i18n";
+import { PERSON_STOPPED_TURN_NAME } from "../../shared/client-cancel";
 import type { ApprovalModeSelector } from "./ApprovalModeSelector";
 import type { ModelPicker } from "./ModelPicker";
 
@@ -66,6 +68,7 @@ beforeEach(() => {
   root = createRoot(host);
 });
 afterEach(() => {
+  setLocale("en");
   flushSync(() => root.unmount());
   host.remove();
   vi.unstubAllGlobals();
@@ -108,6 +111,16 @@ describe("a cancelled turn", () => {
     expect(retry()).toBeTruthy();
   });
 
+  it("shows when the person stopped the turn", () => {
+    render({ ...bot, messages: [
+      ask,
+      { id: "cancel", role: "bot", kind: "activity", at: 2, tool: { name: PERSON_STOPPED_TURN_NAME, ok: true } },
+    ] });
+    expect(host.textContent).toContain("You stopped this.");
+    expect(host.textContent).not.toContain("stopped:");
+    expect(retry()).toBeTruthy();
+  });
+
   it("keeps a real error, including one that only mentions cancellation", () => {
     const cause = `${CANCELLED} See the logs.`;
     render({ ...bot, messages: [ask, { id: "error", role: "bot", kind: "activity", at: 2, tool: { name: `error: ${cause}`, ok: false } }] });
@@ -115,6 +128,16 @@ describe("a cancelled turn", () => {
     expect(host.innerHTML).toContain("border-danger");
     expect(host.textContent).not.toContain("Stopped");
     expect(retry()).toBeTruthy();
+  });
+
+  it("localizes when the person stopped the turn in Italian", () => {
+    setLocale("it");
+    render({ ...bot, messages: [
+      ask,
+      { id: "cancel", role: "bot", kind: "activity", at: 2, tool: { name: PERSON_STOPPED_TURN_NAME, ok: true } },
+    ] });
+    expect(host.textContent).toContain("Interrotto da te.");
+    expect(host.textContent).not.toContain("You stopped this.");
   });
 
   it("offers Retry only on the latest turn, and not while the bot is busy", () => {

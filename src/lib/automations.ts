@@ -1,6 +1,5 @@
 // Automations as a person reads them: one plain sentence, one status word, "last ran" and "next". Built from the
 // store's schedules (routines), webhooks and runs, so the Automations page, its panel and the chat card never disagree.
-import { cronScheduleLabel } from "../../shared/cron-label";
 import { activeLocale, t } from "@/lib/i18n";
 import type { LocaleKey } from "@/locales";
 import type { Routine, RoutineRun, RoutineSchedule } from "@/lib/routines";
@@ -122,6 +121,62 @@ const atClock = (time: string) => {
 };
 const dayName = (day: number, style: "long" | "short") => new Date(2026, 0, 4 + day).toLocaleDateString(locale(), { weekday: style });
 
+const CRON_ORDER = {
+  first: "automations.when.order.first",
+  second: "automations.when.order.second",
+  third: "automations.when.order.third",
+  fourth: "automations.when.order.fourth",
+  fifth: "automations.when.order.fifth",
+  last: "automations.when.order.last",
+} as const satisfies Record<string, LocaleKey>;
+
+/** The hour and minute written in the cron, not shifted into the person's zone. */
+function wallClock(hour: number, minute: number): string {
+  const at = new Date(Date.UTC(2026, 0, 5, hour, minute));
+  const dropMinutes = minute === 0;
+  return at.toLocaleTimeString(locale(), dropMinutes
+    ? { hour: "numeric", timeZone: "UTC" }
+    : { hour: "numeric", minute: "2-digit", timeZone: "UTC" });
+}
+
+function zoneName(timeZone: string): string {
+  try {
+    const name = new Intl.DateTimeFormat(locale(), { timeZone, timeZoneName: "longGeneric" })
+      .formatToParts(new Date())
+      .find((part) => part.type === "timeZoneName")?.value;
+    return name || timeZone;
+  } catch {
+    return timeZone;
+  }
+}
+
+/** Familiar cron presets, in the person's language. Anything else stays a custom schedule. */
+function cronWhen(expression: string, timeZone: string): string | null {
+  const [minute, hour, day, month, weekday] = expression.trim().split(/\s+/);
+  if (!/^\d+$/.test(minute ?? "") || !/^\d+$/.test(hour ?? "")) return null;
+  const time = wallClock(Number(hour), Number(minute));
+  const monthDay = /^\d+$/.test(day ?? "") ? Number(day) : null;
+  let when: string | null = null;
+  if (weekday === "*" && month === "*") {
+    if (day === "*") when = t("automations.when.everyDay", { time });
+    else if (day === "L") when = t("automations.when.monthlyLast", { time });
+    else if (monthDay !== null) when = t("automations.when.monthlyDay", { day: monthDay, time });
+  } else if (weekday === "*" && /^\d+$/.test(month ?? "") && monthDay !== null) {
+    const monthName = new Date(Date.UTC(2026, Number(month) - 1, 1)).toLocaleDateString(locale(), { month: "long", timeZone: "UTC" });
+    when = t("automations.when.yearly", { month: monthName, day: monthDay, time });
+  } else if (day === "*" && month === "*") {
+    if (weekday === "1-5" || weekday?.toUpperCase() === "MON-FRI") when = t("automations.when.everyWeekday", { time });
+    else if (/^[0-7]$/.test(weekday ?? "")) when = t("automations.when.everyDays", { days: dayName(Number(weekday) % 7, "long"), time });
+    else {
+      const nth = /^([0-7])#([1-5]|L)$/i.exec(weekday ?? "");
+      const order = nth && (nth[2]!.toUpperCase() === "L" ? "last" : ["", "first", "second", "third", "fourth", "fifth"][Number(nth[2])]!);
+      const orderKey = order && CRON_ORDER[order as keyof typeof CRON_ORDER];
+      if (nth && orderKey) when = t("automations.when.monthlyNth", { order: t(orderKey), day: dayName(Number(nth[1]) % 7, "long"), time });
+    }
+  }
+  return when ? t("automations.when.inZone", { when, zone: zoneName(timeZone) }) : null;
+}
+
 /** "Every weekday at 9 AM", "Every Monday at 5 PM", "Every 30 minutes", "On Monday, October 19 at 9 AM". */
 export function plainWhen(schedule: RoutineSchedule): string {
   if (schedule.type === "limit_reset") return limitResetWhen(schedule);
@@ -132,8 +187,7 @@ export function plainWhen(schedule: RoutineSchedule): string {
     // "Every 2 minutes" is a cron step: an interval runs at most every 5 minutes, so a bot asked for less writes this.
     const minutes = /^\*\/([1-5]?\d) \* \* \* \*$/.exec(schedule.expression.trim())?.[1];
     if (minutes && Number(minutes) >= 2) return t("automations.when.everyMinutes", { count: Number(minutes) });
-    const label = cronScheduleLabel(schedule);
-    return label.startsWith("Cron ") ? t("automations.when.custom") : label;
+    return cronWhen(schedule.expression, schedule.timeZone) ?? t("automations.when.custom");
   }
   if (schedule.type === "interval") {
     const minutes = schedule.everyMinutes;

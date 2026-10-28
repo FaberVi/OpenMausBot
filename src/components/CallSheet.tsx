@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { AudioLines, Check, Minus, X } from "lucide-react";
 
 import { formatCallDuration } from "../../shared/live-call";
-import { stripLeakedSystemHarnessMessages } from "../../shared/system-message-guard";
+import { displayBotMessageText } from "@/lib/bot-message-text";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { callConversation, type CallConversationEntry, type CallRecordLine } from "@/lib/call-record";
 import { t } from "@/lib/i18n";
@@ -169,7 +169,7 @@ function SheetBlock({ block, busy, threadId }: { block: Block; busy: boolean; th
       </div>
     );
   }
-  const text = stripLeakedSystemHarnessMessages(block.message.text);
+  const text = displayBotMessageText(block.message.text ?? "");
   if (!text.trim()) return null;
   return (
     <div className="flex justify-start">

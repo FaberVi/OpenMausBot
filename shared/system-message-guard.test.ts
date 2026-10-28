@@ -49,6 +49,15 @@ Everything compiled successfully and all tests pass!`;
     expect(isPureLeakedSystemHarnessMessage(mixed)).toBe(false);
   });
 
+  it("drops a trailing cursor stream teardown and hides a message that is only that", () => {
+    const reply = "Ricompila in Unity.\n\nError: RetriableError: WritableIterable is closed";
+    expect(stripLeakedSystemHarnessMessages(reply)).toBe("Ricompila in Unity.");
+    expect(isPureLeakedSystemHarnessMessage(reply)).toBe(false);
+    expect(isPureLeakedSystemHarnessMessage("\n\nError: RetriableError: WritableIterable is closed")).toBe(true);
+    expect(stripLeakedSystemHarnessMessages("The log said Error: RetriableError: WritableIterable is closed and then continued."))
+      .toContain("and then continued.");
+  });
+
   it("strips unclosed system tags during streaming / truncation", () => {
     const unclosed = `The following is a <SYSTEM_MESSAGE> not actually sent by the user.
 <SYSTEM_MESSAGE> [Message] timestamp=2026-10-10T18:00:00Z task still in progress`;
