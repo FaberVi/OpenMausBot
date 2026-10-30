@@ -67,12 +67,11 @@ const BUILTIN_LOCAL_WIRE_NAMES = new Set<string>([en["place.local"], en["rail.th
 
 /** Electron labels the built-in local place in English; show it in the active locale. */
 export function workspacePlaceName(name: string, place?: { local?: boolean; workspaceId?: string }): string {
-  const builtInWire = BUILTIN_LOCAL_WIRE_NAMES.has(name);
-  const defaultLocalSlot =
-    place?.workspaceId === "local" ||
-    place?.workspaceId === "workspace-local" ||
-    (place?.local === true && builtInWire);
-  if (defaultLocalSlot) return t("rail.thisComputer");
   if (place?.local === false) return name;
-  return builtInWire ? t("rail.thisComputer") : name;
+  const builtInWire = BUILTIN_LOCAL_WIRE_NAMES.has(name);
+  const builtInLocal =
+    (place?.local === true && builtInWire) ||
+    ((place?.workspaceId === "local" || place?.workspaceId === "workspace-local") && builtInWire) ||
+    (!place && builtInWire);
+  return builtInLocal ? t("rail.thisComputer") : name;
 }

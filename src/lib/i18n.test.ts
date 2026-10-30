@@ -71,6 +71,7 @@ describe("t", () => {
     expect(workspacePlaceName(en["place.local"], { local: true })).toBe("Questo computer");
     expect(workspacePlaceName(en["place.local"], { workspaceId: "workspace-local" })).toBe("Questo computer");
     expect(workspacePlaceName(en["place.local"], { workspaceId: "local" })).toBe("Questo computer");
+    expect(workspacePlaceName(en["place.local"], { workspaceId: "remote-office" })).toBe(en["place.local"]);
     expect(workspacePlaceName(en["place.local"], { local: false })).toBe(en["place.local"]);
     setLocale("en");
     expect(workspacePlaceName(en["place.local"])).toBe("This computer");
