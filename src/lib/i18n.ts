@@ -62,3 +62,8 @@ export function t(key: LocaleKey, params?: Record<string, string | number>): str
     params && name in params ? String(params[name]) : name === "app" ? productName() : match,
   );
 }
+
+/** Electron labels the built-in local place in English; show it in the active locale. */
+export function workspacePlaceName(name: string): string {
+  return name === en["place.local"] || name === en["rail.thisComputer"] ? t("rail.thisComputer") : name;
+}

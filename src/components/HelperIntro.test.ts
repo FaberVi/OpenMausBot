@@ -101,6 +101,13 @@ afterEach(async () => {
 });
 
 describe("what MausBot says first", () => {
+  it("speaks in the viewer's UI language, not the English stored on the message", () => {
+    setLocale("it");
+    expect(introLines({ name: "MausBot", chief: true })[0]).toBe("Ciao! Sono MausBot. Sono nuovo qui.");
+    expect(followupLine({ ai: "none", apps: [], bots: 0, routines: 0 })).toBe(t("helperIntro.followup.noAi"));
+    setLocale("en");
+  });
+
   it("as the Chief: who it is, what it does here, and that it is looking around, never by the person's name", () => {
     const said = [
       "Hey! I'm MausBot. I'm new here.",
