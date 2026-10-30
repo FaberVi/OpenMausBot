@@ -6,8 +6,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Cloud, FolderOpen, MessageSquare, Repeat } from "lucide-react";
-import type { CloudAccountState } from "../electron/cloud-account.mjs";
-import type { CloudOffer } from "../electron/cloud-home.mjs";
+import type { CloudAccountState } from "../../electron/cloud-account.mjs";
+import type { CloudOffer } from "../../electron/cloud-home.mjs";
 import { CloudAddPanel, CloudAddSheet, type CloudAddActions, type CloudAddUi } from "@/components/CloudAddDialog";
 import { CloudProPopup, cloudProPopupView } from "@/components/CloudProPopup";
 import { ChooseScreen } from "@/components/cloud-buy/ChooseScreen";
@@ -24,7 +24,7 @@ const OFFER: CloudOffer = { recommended: "pro", creditUsd: 5, reminderDays: 1, r
   { tier: "pro", label: "Pro", amount: 4900, trialDays: 3, allowances: allowances(4, 4, 100, 15, 300, 60_000, 14) },
   { tier: "max", label: "Max", amount: 9900, trialDays: 3, allowances: allowances(8, 4, 100, 15, 800, 180_000, 14) },
 ] };
-const PLAIN: CloudOffer = { recommended: "pro", refundDays: 14, plans: OFFER.plans.map(({ trialDays: _days, ...plan }) => plan) };
+const PLAIN: CloudOffer = { recommended: "pro", refundDays: 14, plans: OFFER.plans.map(({ trialDays, ...plan }) => plan) };
 const PERSONAL = { tier: "personal", label: "Personal", amount: 2900, allowances: allowances(2, 3, 20, 15, 100, 30_000, 14) };
 const started = { tier: "pro", trial: { state: "active" as const, tier: "pro", endsAt: NOW + 3 * DAY, amount: 4900, chargeAt: NOW + 3 * DAY, holdUntil: null, deleteAt: null, keep: "none" as const },
   credit: { grantedUsd: 5, remainingUsd: 5, state: "active" as const } };

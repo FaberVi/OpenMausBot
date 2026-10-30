@@ -3,7 +3,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Bot, CalendarClock, Gauge, LayoutGrid, MessageSquare, Plus, Search, Settings } from "lucide-react";
-import type { CloudRoom, CloudUsage } from "../electron/cloud-home.mjs";
+import type { CloudRoom, CloudUsage } from "../../electron/cloud-home.mjs";
 import { InitialsAvatar } from "@/components/Avatar";
 import { ConfirmDialogCard } from "@/components/ConfirmDialog";
 import { CloudRoomCardView } from "@/components/CloudRoomCard";

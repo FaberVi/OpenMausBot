@@ -3,7 +3,7 @@
 // ?state=question|approval|open|answered|others&surface=chat|inbox|panel&skin=midnight|daylight&mode=simple|advanced&lang=de
 import { StrictMode, useMemo, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
-import type { InboxRow, InboxView } from "../shared/inbox";
+import type { InboxRow, InboxView } from "../../shared/inbox";
 import { ChatView } from "@/components/ChatView";
 import { InboxPanel } from "@/components/inbox/InboxPanel";
 import { setLocale } from "@/lib/i18n";
