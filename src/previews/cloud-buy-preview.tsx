@@ -1,4 +1,4 @@
-// Dev-only gallery of the Cloud buying sheet and the Cloud Pro popup, served at /cloud-buy-preview.html; not in the packaged app.
+// Dev-only gallery of the Cloud buying sheet and the Cloud Pro popup, served at /previews/cloud-buy-preview.html; not in the packaged app.
 // ?state=choose|choose-plain|sign-in-email|sign-in-code|sign-in-wrong|sign-in-sso|sign-in-done|sign-in-browser|pay|pay-late|setup|setup-slow|ready|has-cloud
 //   |team-setup|team-ready|unreachable|pro-popup|pro-popup-plain|pro-popup-plan|pro-popup-reauth
 // &skin=midnight&staging=1&reduced=1&plan=starter&lang=de
@@ -14,7 +14,7 @@ import { ChooseScreen } from "@/components/cloud-buy/ChooseScreen";
 import type { CloudAddView } from "@/lib/cloud-plan";
 import { setLocale } from "@/lib/i18n";
 import { SKIN_IDS, type SkinId } from "@/lib/skins";
-import "./styles.css";
+import "../styles.css";
 
 const NOW = Date.now(), DAY = 86_400_000;
 const allowances = (cpus: number, swapGb: number, maxDiskGb: number, computers: number, computerHours: number, voiceCharacters: number, snapshotDays: number) =>

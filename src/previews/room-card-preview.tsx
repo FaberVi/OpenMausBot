@@ -1,4 +1,4 @@
-// Dev-only gallery of the room card, served at /room-card-preview.html; not in the packaged app.
+// Dev-only gallery of the room card, served at /previews/room-card-preview.html; not in the packaged app.
 // ?state=memory|stopped|disk|tip|trial|upgraded|restarting|confirm&layout=desktop|phone&skin=midnight|daylight&lang=de
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -12,7 +12,7 @@ import { setLocale, t } from "@/lib/i18n";
 import { roomCardView } from "@/lib/room-card";
 import { SKIN_IDS, type SkinId } from "@/lib/skins";
 import { upgradeConfirmBody } from "@/lib/usage-meter";
-import "./styles.css";
+import "../styles.css";
 
 const RESETS = Date.UTC(2026, 10, 1);
 const STARTER: CloudUsage = { tier: "starter", resetsAt: RESETS, meters: [], upgrades: [{ tier: "pro", amount: 4900 }, { tier: "max", amount: 9900 }] };

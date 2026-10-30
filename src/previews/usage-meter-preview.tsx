@@ -1,4 +1,4 @@
-// Dev-only gallery of the usage meter, served at /usage-meter-preview.html; not in the packaged app.
+// Dev-only gallery of the usage meter, served at /previews/usage-meter-preview.html; not in the packaged app.
 // ?view=sidebar|settings|confirm&state=near|full|browser|top|trial&skin=midnight|daylight&lang=de
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -12,7 +12,7 @@ import { cloudPlanLabel } from "@/lib/cloud-plan";
 import { setLocale, t } from "@/lib/i18n";
 import { SKIN_IDS, type SkinId } from "@/lib/skins";
 import { upgradeConfirmBody, usageCardView } from "@/lib/usage-meter";
-import "./styles.css";
+import "../styles.css";
 
 const RESETS = Date.UTC(2026, 10, 1);
 const USAGE: Record<string, CloudUsage> = {
