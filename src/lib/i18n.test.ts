@@ -67,6 +67,11 @@ describe("t", () => {
     setLocale("it");
     expect(workspacePlaceName(en["place.local"])).toBe("Questo computer");
     expect(workspacePlaceName("APRS Chat")).toBe("APRS Chat");
+    expect(workspacePlaceName("APRS Chat", { local: true })).toBe("APRS Chat");
+    expect(workspacePlaceName(en["place.local"], { local: true })).toBe("Questo computer");
+    expect(workspacePlaceName(en["place.local"], { workspaceId: "workspace-local" })).toBe("Questo computer");
+    expect(workspacePlaceName(en["place.local"], { workspaceId: "local" })).toBe("Questo computer");
+    expect(workspacePlaceName(en["place.local"], { local: false })).toBe(en["place.local"]);
     setLocale("en");
     expect(workspacePlaceName(en["place.local"])).toBe("This computer");
   });

@@ -63,7 +63,16 @@ export function t(key: LocaleKey, params?: Record<string, string | number>): str
   );
 }
 
+const BUILTIN_LOCAL_WIRE_NAMES = new Set<string>([en["place.local"], en["rail.thisComputer"]]);
+
 /** Electron labels the built-in local place in English; show it in the active locale. */
-export function workspacePlaceName(name: string): string {
-  return name === en["place.local"] || name === en["rail.thisComputer"] ? t("rail.thisComputer") : name;
+export function workspacePlaceName(name: string, place?: { local?: boolean; workspaceId?: string }): string {
+  const builtInWire = BUILTIN_LOCAL_WIRE_NAMES.has(name);
+  const defaultLocalSlot =
+    place?.workspaceId === "local" ||
+    place?.workspaceId === "workspace-local" ||
+    (place?.local === true && builtInWire);
+  if (defaultLocalSlot) return t("rail.thisComputer");
+  if (place?.local === false) return name;
+  return builtInWire ? t("rail.thisComputer") : name;
 }

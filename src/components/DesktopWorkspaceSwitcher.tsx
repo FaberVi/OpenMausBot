@@ -117,7 +117,7 @@ function Switcher({ compact = false, inline = false, pill = false, rail = false,
       </div>
     </div>;
   }
-  const name = workspacePlaceName(current?.name ?? (cloudHome ? cloudName : t("sidebar.servers")));
+  const name = workspacePlaceName(current?.name ?? (cloudHome ? cloudName : t("sidebar.servers")), current ? { local: current.local } : undefined);
   const Icon = current?.local === false || (cloudHome && !current) ? Cloud : Laptop;
   const shown = cloudHome ? withPower(name) : name;
   const title = current?.origin ? `${shown} · ${current.origin}` : shown;

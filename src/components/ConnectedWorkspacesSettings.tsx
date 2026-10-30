@@ -148,7 +148,7 @@ export function ConnectedWorkspacesSettings() {
           {[{ id: "local", name: t("rail.thisComputer"), origin: "", color: undefined }, ...saved.environments.filter((entry) => entry.kind !== "local")].map((entry) => {
             const active = entry.id === saved.activeId;
             const Icon = entry.id === "local" ? Laptop : Cloud;
-            const displayName = entry.id === "local" ? t("rail.thisComputer") : workspacePlaceName(entry.name);
+            const displayName = entry.id === "local" ? t("rail.thisComputer") : workspacePlaceName(entry.name, { workspaceId: entry.id });
             return <li key={entry.id} className="flex items-center gap-3 py-3">
               {cloudColor(entry.color) ? <CloudTile color={entry.color} size={20} /> : <Icon size={18} className="shrink-0 self-center text-ink-secondary" />}
               <div className="min-w-0 flex-1"><div className="truncate text-[13px] font-medium text-ink">{displayName}</div>

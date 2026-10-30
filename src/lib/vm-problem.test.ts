@@ -17,5 +17,6 @@ describe("localizedContainerProblem", () => {
   it("passes through unrecognized problems", () => {
     expect(localizedContainerProblem("Something else")).toBe("Something else");
     expect(localizedContainerProblem(null)).toBeNull();
+    expect(localizedContainerProblem(undefined)).toBeNull();
   });
 });

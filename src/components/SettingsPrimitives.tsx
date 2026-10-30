@@ -135,10 +135,10 @@ export function SettingsDisclosureRow({ id, title, subtitle, trailing, block, op
           aria-expanded={open}
           aria-controls={regionId}
           onClick={onToggle}
-          className="group flex min-h-11 w-full cursor-pointer items-center gap-x-5 gap-y-2 px-4 py-2.5 text-left"
+          className="group flex min-h-11 w-full cursor-pointer flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2.5 text-left"
         >
-          <span className={cn("flex min-h-6 min-w-[min(100%,15rem)] flex-1", subtitle ? "flex-col justify-center gap-0.5" : "items-center")}>
-            <span className="text-[14px] leading-5 text-ink">{title}</span>
+          <span className={cn("flex min-h-6 min-w-0 flex-1 basis-[min(100%,15rem)]", subtitle ? "flex-col justify-center gap-0.5" : "items-center")}>
+            <span className="text-pretty text-[14px] leading-5 break-words text-ink">{title}</span>
             {subtitle && <span className="text-[13px] leading-[18px] text-ink-secondary">{subtitle}</span>}
           </span>
           <span className="ml-auto flex shrink-0 items-center gap-3 self-center">

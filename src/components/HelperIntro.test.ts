@@ -104,7 +104,9 @@ describe("what MausBot says first", () => {
   it("speaks in the viewer's UI language, not the English stored on the message", () => {
     setLocale("it");
     expect(introLines({ name: "MausBot", chief: true })[0]).toBe("Ciao! Sono MausBot. Sono nuovo qui.");
-    expect(followupLine({ ai: "none", apps: [], bots: 0, routines: 0 })).toBe(t("helperIntro.followup.noAi"));
+    expect(followupLine({ ai: "none", apps: [], bots: 0, routines: 0 })).toBe(
+      "Ho dato un'occhiata in giro. Prima di fare un lavoro serio mi serve un'AI con cui ragionare. Accedi con un account che hai già, come Claude o ChatGPT, e poi ci penso io.",
+    );
     setLocale("en");
   });
 

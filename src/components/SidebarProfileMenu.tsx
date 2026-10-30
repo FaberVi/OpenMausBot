@@ -384,7 +384,7 @@ export function placeMenuItems(place: Pick<WorkspacePlace, "bridge" | "current" 
   const icon = cloudColor(current?.color) ? <CloudTile color={current?.color} size={16} />
     : current?.local === false || (place.cloudHome && !current) ? <Cloud size={16} /> : <Laptop size={16} />;
   return [
-    ...(current ? [{ key: "place", label: workspacePlaceName(current.name), ...(place.cloudHome && place.onLine ? { subtitle: place.onLine } : {}), icon, trailing: here, onSelect: place.openMenu }] : []),
+    ...(current ? [{ key: "place", label: workspacePlaceName(current.name, { local: current.local }), ...(place.cloudHome && place.onLine ? { subtitle: place.onLine } : {}), icon, trailing: here, onSelect: place.openMenu }] : []),
     ...(besideRail ? [] : [{ key: "switch-place", label: t("sidebar.menu.switchTo"), icon: <ArrowLeftRight size={16} />, onSelect: place.openMenu }]),
   ];
 }
